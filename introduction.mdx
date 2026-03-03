@@ -1,0 +1,191 @@
+---
+title: Introduction
+description: Welcome to the Personal Portfolio documentation - a modern React + TypeScript portfolio with AI chat assistant, blog system, and project showcase
+---
+
+<img
+  className="block dark:hidden"
+  src="/images/hero-light.svg"
+  alt="Hero Light"
+/>
+<img
+  className="hidden dark:block"
+  src="/images/hero-dark.svg"
+  alt="Hero Dark"
+/>
+
+## Overview
+
+A modern, responsive portfolio website built with React, TypeScript, and Tailwind CSS, featuring a custom AI chat assistant powered by Azure's AI models. This portfolio showcases your work with an interactive AI assistant that can answer questions about your background, skills, and experience.
+
+## Key Features
+
+<CardGroup cols={2}>
+  <Card
+    title="Interactive AI Chat Assistant"
+    icon="messages"
+    color="#f97316"
+  >
+    Custom-trained AI powered by Azure that answers questions about your background, skills, and experience with intelligent context awareness
+  </Card>
+  <Card
+    title="Modern UI/UX"
+    icon="palette"
+    color="#f97316"
+  >
+    Clean, professional design with glassmorphism effects, smooth animations, and eye-friendly dark theme built with Tailwind CSS
+  </Card>
+  <Card
+    title="Project Showcase"
+    icon="folder-open"
+    color="#f97316"
+  >
+    Dynamic project cards with 3D hover effects, tags, status indicators, and links to live demos and GitHub repositories
+  </Card>
+  <Card
+    title="Serverless Architecture"
+    icon="cloud"
+    color="#f97316"
+  >
+    Netlify Functions for backend operations with automatic deployment pipeline and Azure AI integration
+  </Card>
+</CardGroup>
+
+## Tech Stack
+
+### Frontend
+
+- **React 18** - Modern UI library with hooks and concurrent features
+- **TypeScript** - Type-safe development with IntelliSense
+- **Tailwind CSS** - Utility-first CSS framework
+- **Vite** - Lightning-fast build tool and dev server
+- **Framer Motion** - Production-ready animation library
+- **Lucide React** - Beautiful, consistent icon set
+
+### Backend & Services
+
+- **Netlify Functions** - Serverless functions for API proxying
+- **Azure AI Models** - GPT-4o-mini for intelligent chat responses
+- **Convex** - Real-time backend for blog and data management
+
+### Deployment
+
+- **Netlify** - Automatic deployment and hosting
+- **GitHub Actions** - CI/CD pipeline integration
+
+## What You'll Build
+
+This portfolio includes:
+
+<Steps>
+  <Step title="Hero Section">
+    Eye-catching landing page with profile image, tagline, and scroll animations
+  </Step>
+  <Step title="GitHub Contributions">
+    Live contribution graph showing your development activity
+  </Step>
+  <Step title="Featured Projects">
+    Interactive project cards with glassmorphism and 3D hover effects
+  </Step>
+  <Step title="Employment Timeline">
+    Professional experience displayed in a beautiful timeline
+  </Step>
+  <Step title="AI Chat Assistant">
+    Floating chat widget with blog context awareness and markdown support
+  </Step>
+  <Step title="Blog System">
+    Dynamic blog with Convex backend and AI-powered summaries
+  </Step>
+</Steps>
+
+## Quick Start
+
+<CodeGroup>
+
+```bash npm
+npm install
+npm run dev
+```
+
+```bash pnpm
+pnpm install
+pnpm run dev
+```
+
+```bash yarn
+yarn install
+yarn dev
+```
+
+</CodeGroup>
+
+<Note>
+  This project uses **pnpm** as the package manager. Make sure you have Node.js v20 or higher installed.
+</Note>
+
+## Live Demo
+
+Check out the live portfolio at [ethanclinick.netlify.app](https://ethanclinick.netlify.app)
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card
+    title="Quickstart Guide"
+    icon="rocket"
+    href="/quickstart"
+  >
+    Get your portfolio running in 5 minutes
+  </Card>
+  <Card
+    title="Installation"
+    icon="download"
+    href="/installation"
+  >
+    Detailed setup instructions and configuration
+  </Card>
+  <Card
+    title="Customization"
+    icon="paintbrush"
+    href="/customization/styling"
+  >
+    Learn how to personalize your portfolio
+  </Card>
+  <Card
+    title="Deployment"
+    icon="rocket-launch"
+    href="/deployment/overview"
+  >
+    Deploy to Netlify and go live
+  </Card>
+</CardGroup>
+
+## Architecture Highlights
+
+### Component Structure
+
+The portfolio uses a clean component architecture:
+
+- **App.tsx** - Main routing with React Router
+- **Portfolio.tsx** - Landing page with hero and sections
+- **ChatBox.tsx** - AI assistant with Azure integration
+- **ProjectCard.tsx** - Interactive project display with 3D effects
+- **UI Components** - Reusable components with Radix UI primitives
+
+### Styling Approach
+
+Custom Tailwind configuration with:
+- Glassmorphism utilities
+- Custom animations (float, glow-pulse, chat-bounce)
+- Orange (#f97316) primary color theme
+- Dark-first design system
+
+### State Management
+
+- React hooks for local state
+- Convex for real-time data sync
+- Session storage for welcome animation state
+
+<Tip>
+  The AI chat assistant uses blog context to provide intelligent summaries when viewing blog posts. This creates a seamless user experience!
+</Tip>

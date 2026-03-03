@@ -1,0 +1,376 @@
+---
+title: TypeScript Types & Interfaces
+description: Core TypeScript type definitions for blog posts, chat messages, and system context
+---
+
+# TypeScript Types & Interfaces
+
+Type definitions and interfaces used throughout the portfolio application.
+
+## Chat & AI Types
+
+Types related to the ChatBox component and AI interactions.
+
+### Message
+
+Represents a single chat message in the conversation.
+
+```tsx
+type Message = {
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+};
+```
+
+<ParamField path="role" type="'user' | 'assistant' | 'system'" required>
+  The role of the message sender:
+  
+  - `user` - Messages from the end user
+  - `assistant` - Responses from the AI
+  - `system` - System prompts and instructions
+</ParamField>
+
+<ParamField path="content" type="string" required>
+  The text content of the message. Supports markdown formatting for assistant messages.
+</ParamField>
+
+### BlogContext
+
+Context information about a blog post for AI summarization.
+
+```tsx
+type BlogContext = {
+  title: string;
+  content: string;
+  excerpt: string;
+};
+```
+
+<ParamField path="title" type="string" required>
+  The title of the blog post
+</ParamField>
+
+<ParamField path="content" type="string" required>
+  The full markdown content of the blog post
+</ParamField>
+
+<ParamField path="excerpt" type="string" required>
+  A brief excerpt or description of the blog post
+</ParamField>
+
+### ChatBoxProps
+
+Props interface for the ChatBox component.
+
+```tsx
+type ChatBoxProps = {
+  isOpen: boolean;
+  onClose: () => void;
+  isDarkMode?: boolean;
+  initialMessage?: string;
+  blogContext?: BlogContext;
+};
+```
+
+<ParamField path="isOpen" type="boolean" required>
+  Controls visibility of the chat box
+</ParamField>
+
+<ParamField path="onClose" type="() => void" required>
+  Callback function when chat is closed
+</ParamField>
+
+<ParamField path="isDarkMode" type="boolean">
+  Enables dark mode styling (defaults to true)
+</ParamField>
+
+<ParamField path="initialMessage" type="string">
+  Optional initial message to send when chat opens
+</ParamField>
+
+<ParamField path="blogContext" type="BlogContext">
+  Optional blog context for AI summarization
+</ParamField>
+
+### Source Location
+
+`src/types/types.ts:1`
+
+---
+
+## Blog Types
+
+Type definitions for blog posts and metadata.
+
+### BlogPost
+
+Complete blog post with full content.
+
+```tsx
+interface BlogPost {
+  id: string;
+  slug: string;
+  title: string;
+  date: string;
+  publishedDate: string;
+  excerpt: string;
+  content: string;
+  category?: string;
+  tags?: string[];
+  featured?: boolean;
+  readingTime?: number;
+}
+```
+
+<ParamField path="id" type="string" required>
+  Unique identifier for the post (typically same as slug)
+</ParamField>
+
+<ParamField path="slug" type="string" required>
+  URL-friendly identifier used in routes (e.g., "welcome-to-my-blog")
+</ParamField>
+
+<ParamField path="title" type="string" required>
+  The title of the blog post
+</ParamField>
+
+<ParamField path="date" type="string" required>
+  Publication date in ISO format (e.g., "2024-01-15")
+</ParamField>
+
+<ParamField path="publishedDate" type="string" required>
+  Alias for `date` field, same value
+</ParamField>
+
+<ParamField path="excerpt" type="string" required>
+  Brief summary or description of the post
+</ParamField>
+
+<ParamField path="content" type="string" required>
+  Full markdown content of the blog post
+</ParamField>
+
+<ParamField path="category" type="string">
+  Category classification (e.g., "Technology", "AI", "Finance")
+</ParamField>
+
+<ParamField path="tags" type="string[]">
+  Array of tag strings for categorization and filtering
+</ParamField>
+
+<ParamField path="featured" type="boolean">
+  Whether the post should be displayed in the featured section (defaults to false)
+</ParamField>
+
+<ParamField path="readingTime" type="number">
+  Estimated reading time in minutes, calculated automatically
+</ParamField>
+
+### BlogPostMetadata
+
+Blog post metadata without full content (used for listings).
+
+```tsx
+interface BlogPostMetadata {
+  id: string;
+  slug: string;
+  title: string;
+  date: string;
+  publishedDate: string;
+  excerpt: string;
+  category?: string;
+  tags?: string[];
+  featured?: boolean;
+  readingTime?: number;
+}
+```
+
+<Note>
+  `BlogPostMetadata` is identical to `BlogPost` except it lacks the `content` field. This optimizes performance when displaying lists of posts.
+</Note>
+
+All fields have the same definitions as `BlogPost` above, excluding `content`.
+
+### Source Location
+
+`src/types/blog.ts:1`
+
+---
+
+## System Context
+
+The `SYSTEM_CONTEXT` constant provides comprehensive information about the portfolio owner for the AI assistant.
+
+### Structure
+
+```tsx
+export const SYSTEM_CONTEXT = {
+  context: {
+    name: string;
+    location: string;
+    email: string;
+    phone: string;
+    linkedin: string;
+    education: EducationInfo;
+    summary: string;
+    experience: Experience[];
+    projects: Project[];
+    skills: string[];
+  },
+  instructions: {
+    role: string;
+    tone: string;
+    preferences: string[];
+  }
+};
+```
+
+### Context Properties
+
+<ParamField path="context.name" type="string">
+  Full name: "Ethan Clinick"
+</ParamField>
+
+<ParamField path="context.education" type="object">
+  Educational background
+  
+  <Expandable title="Education properties">
+    <ResponseField name="degree" type="string">
+      "Bachelor of Science"
+    </ResponseField>
+    <ResponseField name="major" type="string">
+      "Computer Science"
+    </ResponseField>
+    <ResponseField name="university" type="string">
+      "Oregon State University"
+    </ResponseField>
+    <ResponseField name="years" type="string">
+      "2022-2026"
+    </ResponseField>
+  </Expandable>
+</ParamField>
+
+<ParamField path="context.experience" type="Experience[]">
+  Array of work experiences
+  
+  <Expandable title="Experience properties">
+    <ResponseField name="role" type="string">
+      Job title or position
+    </ResponseField>
+    <ResponseField name="company" type="string">
+      Company name
+    </ResponseField>
+    <ResponseField name="location" type="string">
+      Work location
+    </ResponseField>
+    <ResponseField name="dates" type="string">
+      Employment period (e.g., "July 2024 - Present")
+    </ResponseField>
+    <ResponseField name="responsibilities" type="string[]">
+      Array of key responsibilities and achievements
+    </ResponseField>
+    <ResponseField name="links" type="Link[]">
+      Related links (website, LinkedIn, etc.)
+    </ResponseField>
+  </Expandable>
+</ParamField>
+
+<ParamField path="context.projects" type="Project[]">
+  Array of personal and professional projects
+  
+  <Expandable title="Project properties">
+    <ResponseField name="name" type="string">
+      Project name
+    </ResponseField>
+    <ResponseField name="description" type="string">
+      Project description
+    </ResponseField>
+    <ResponseField name="technologies" type="string[]">
+      Technologies used
+    </ResponseField>
+    <ResponseField name="features" type="string[]">
+      Key features
+    </ResponseField>
+    <ResponseField name="githubUrl" type="string" optional>
+      GitHub repository URL
+    </ResponseField>
+    <ResponseField name="links" type="Link[]" optional>
+      Related project links
+    </ResponseField>
+    <ResponseField name="status" type="string" optional>
+      Project status (e.g., "Active")
+    </ResponseField>
+  </Expandable>
+</ParamField>
+
+<ParamField path="context.skills" type="string[]">
+  Array of skills with acquisition year in parentheses
+  
+  Examples:
+  - "Python (2022)"
+  - "AWS (2024)"
+  - "React Native (2024)"
+</ParamField>
+
+### Instructions Properties
+
+<ParamField path="instructions.role" type="string">
+  AI assistant role description and purpose
+</ParamField>
+
+<ParamField path="instructions.tone" type="string">
+  Expected tone of responses ("professional")
+</ParamField>
+
+<ParamField path="instructions.preferences" type="string[]">
+  Guidelines for response content and focus areas
+</ParamField>
+
+### Usage Example
+
+```tsx
+import { SYSTEM_CONTEXT } from '../types/types';
+
+// Access specific information
+const skills = SYSTEM_CONTEXT.context.skills;
+const experience = SYSTEM_CONTEXT.context.experience;
+const tone = SYSTEM_CONTEXT.instructions.tone;
+```
+
+### Source Location
+
+`src/types/types.ts:20`
+
+---
+
+## Type Guards & Utilities
+
+While not explicitly defined in the codebase, you can create type guards for runtime type checking:
+
+```tsx
+function isBlogPost(obj: any): obj is BlogPost {
+  return (
+    typeof obj.id === 'string' &&
+    typeof obj.slug === 'string' &&
+    typeof obj.content === 'string'
+  );
+}
+
+function isBlogContext(obj: any): obj is BlogContext {
+  return (
+    typeof obj.title === 'string' &&
+    typeof obj.content === 'string' &&
+    typeof obj.excerpt === 'string'
+  );
+}
+```
+
+## Best Practices
+
+1. **Use BlogPostMetadata for lists** - Avoid loading full content when displaying multiple posts
+2. **Validate dates** - Ensure date strings are in ISO format for consistent parsing
+3. **Type imports** - Import types with `import type` for better tree-shaking
+
+```tsx
+import type { BlogPost, Message, ChatBoxProps } from '../types/types';
+```

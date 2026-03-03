@@ -1,0 +1,362 @@
+---
+title: 'Animation Customization'
+description: 'Learn how to customize animations using Framer Motion and Tailwind CSS'
+---
+
+## Animation System Overview
+
+Your portfolio uses two animation systems:
+
+1. **Tailwind CSS Animations** - Keyframe animations for glassmorphism effects and micro-interactions
+2. **Scroll Animations** - Custom React components using IntersectionObserver for scroll-triggered animations
+
+## Tailwind CSS Animations
+
+### Built-in Animations
+
+The portfolio includes 11 custom animations defined in `tailwind.config.js`:
+
+<CodeGroup>
+```js Glass Effects
+animation: {
+  'glass-shimmer': 'glass-shimmer 2s ease-in-out infinite alternate',
+  'glow-pulse': 'glow-pulse 4s ease-in-out infinite',
+}
+```
+
+```js Float Animations
+animation: {
+  'float': 'float 6s ease-in-out infinite',
+  'float-delayed': 'float 6s ease-in-out infinite 2s',
+}
+```
+
+```js Chat Button Effects
+animation: {
+  'chat-pulse': 'chat-pulse 2s ease-in-out infinite',
+  'chat-bounce': 'chat-bounce 2s ease-in-out infinite',
+  'chat-bounce-slow': 'chat-bounce 4s ease-in-out infinite',
+  'chat-shimmer': 'chat-shimmer 3s ease-in-out infinite',
+  'chat-glow': 'chat-glow 2.5s ease-in-out infinite alternate',
+}
+```
+
+```js UI Transitions
+animation: {
+  'gradient-shift': 'gradient-shift 3s ease-in-out infinite',
+  'fade-scale': 'fade-scale 0.2s ease-out',
+}
+```
+</CodeGroup>
+
+### Animation Keyframes
+
+Each animation has corresponding keyframes:
+
+#### Glass Shimmer
+
+```js tailwind.config.js
+'glass-shimmer': {
+  '0%': { 'background-position': '-200% 0' },
+  '100%': { 'background-position': '200% 0' },
+}
+```
+
+Use with gradient backgrounds for a shimmer effect:
+
+```jsx
+<div className="glass-shimmer animate-glass-shimmer">
+  Content here
+</div>
+```
+
+#### Float Animation
+
+```js tailwind.config.js
+'float': {
+  '0%, 100%': { transform: 'translateY(0px) rotate(0deg)' },
+  '50%': { transform: 'translateY(-20px) rotate(5deg)' },
+}
+```
+
+Creates a gentle floating effect with slight rotation:
+
+```jsx
+<div className="animate-float">
+  Floating element
+</div>
+```
+
+<Tip>
+Use `animate-float-delayed` for staggered floating effects on multiple elements.
+</Tip>
+
+#### Chat Button Animations
+
+Special animations for the chat button:
+
+<CodeGroup>
+```js Pulse
+'chat-pulse': {
+  '0%, 100%': { transform: 'scale(1)', opacity: '1' },
+  '50%': { transform: 'scale(1.05)', opacity: '0.9' },
+}
+```
+
+```js Bounce
+'chat-bounce': {
+  '0%, 20%, 50%, 80%, 100%': { transform: 'translateY(0) scale(1)' },
+  '40%': { transform: 'translateY(-8px) scale(1.05)' },
+  '60%': { transform: 'translateY(-4px) scale(1.02)' },
+}
+```
+
+```js Glow
+'chat-glow': {
+  '0%': { 
+    'box-shadow': '0 0 5px rgba(59, 130, 246, 0.3), 0 0 10px rgba(59, 130, 246, 0.2)' 
+  },
+  '100%': { 
+    'box-shadow': '0 0 10px rgba(59, 130, 246, 0.5), 0 0 20px rgba(59, 130, 246, 0.3), 0 0 30px rgba(59, 130, 246, 0.1)' 
+  },
+}
+```
+</CodeGroup>
+
+#### Gradient Shift
+
+```js tailwind.config.js
+'gradient-shift': {
+  '0%, 100%': { 'background-position': '0% 50%' },
+  '50%': { 'background-position': '100% 50%' },
+}
+```
+
+Animates gradient backgrounds. Use with `background-size: 200%`:
+
+```jsx
+<div className="bg-gradient-to-r from-purple-500 to-blue-500 
+                bg-[length:200%_200%] animate-gradient-shift">
+  Animated gradient
+</div>
+```
+
+## Scroll Animations
+
+Custom React components for scroll-triggered animations in `src/components/scroll-animations.tsx`.
+
+### ScrollFadeIn Component
+
+Fades in and slides up when scrolling into view:
+
+```tsx src/components/scroll-animations.tsx
+export function ScrollFadeIn({ 
+  children, 
+  className = "", 
+  delay = 0 
+}: ScrollAnimationProps) {
+  // Implementation uses IntersectionObserver
+  // Adds 'animate-fade-in-up' class when in viewport
+}
+```
+
+#### Usage
+
+```jsx
+import { ScrollFadeIn } from './components/scroll-animations'
+
+<ScrollFadeIn delay={100}>
+  <h2>This will fade in</h2>
+</ScrollFadeIn>
+```
+
+<Note>
+The `delay` prop is in milliseconds and allows you to stagger multiple animations.
+</Note>
+
+### ScrollSlideIn Component
+
+Slides in from the left when scrolling into view:
+
+```tsx src/components/scroll-animations.tsx
+export function ScrollSlideIn({ 
+  children, 
+  className = "", 
+  delay = 0 
+}: ScrollAnimationProps) {
+  // Adds 'animate-slide-in-left' class when in viewport
+}
+```
+
+#### Usage
+
+```jsx
+import { ScrollSlideIn } from './components/scroll-animations'
+
+<ScrollSlideIn delay={200}>
+  <div>This will slide in from left</div>
+</ScrollSlideIn>
+```
+
+### How Scroll Animations Work
+
+<Steps>
+  <Step title="Initial State">
+    Elements start with `opacity-0` and transform classes:
+    ```tsx
+    className="opacity-0 translate-y-8 transition-all duration-700 ease-out"
+    ```
+  </Step>
+
+  <Step title="Viewport Detection">
+    IntersectionObserver watches for element entering viewport:
+    ```tsx
+    const observer = new IntersectionObserver(
+      (entries) => { /* ... */ },
+      { threshold: 0.1 }
+    )
+    ```
+  </Step>
+
+  <Step title="Animation Trigger">
+    When visible, opacity and transform classes are removed with optional delay:
+    ```tsx
+    setTimeout(() => {
+      target.classList.add(animationClass)
+      hiddenClasses.forEach((c) => target.classList.remove(c))
+    }, delay)
+    ```
+  </Step>
+</Steps>
+
+<Warning>
+Scroll animations trigger once when the element enters the viewport. They don't reverse when scrolling back up.
+</Warning>
+
+## Creating Custom Animations
+
+### Adding Tailwind Animations
+
+<Steps>
+  <Step title="Define Keyframes">
+    Add your keyframes in `tailwind.config.js`:
+    ```js
+    keyframes: {
+      'my-animation': {
+        '0%': { opacity: '0', transform: 'scale(0.8)' },
+        '100%': { opacity: '1', transform: 'scale(1)' },
+      }
+    }
+    ```
+  </Step>
+
+  <Step title="Register Animation">
+    Add the animation configuration:
+    ```js
+    animation: {
+      'my-animation': 'my-animation 0.5s ease-out',
+    }
+    ```
+  </Step>
+
+  <Step title="Use in Components">
+    Apply with the `animate-` prefix:
+    ```jsx
+    <div className="animate-my-animation">
+      Animated content
+    </div>
+    ```
+  </Step>
+</Steps>
+
+### Creating New Scroll Animation Components
+
+Extend the existing pattern in `scroll-animations.tsx`:
+
+```tsx src/components/scroll-animations.tsx
+export function ScrollZoomIn({ 
+  children, 
+  className = "", 
+  delay = 0 
+}: ScrollAnimationProps) {
+  const elementRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const element = elementRef.current
+    if (!element) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setTimeout(() => {
+              element.classList.remove('opacity-0', 'scale-75')
+              element.classList.add('opacity-100', 'scale-100')
+            }, delay)
+          }
+        })
+      },
+      { threshold: 0.1 }
+    )
+
+    observer.observe(element)
+    return () => observer.disconnect()
+  }, [delay])
+
+  return (
+    <div 
+      ref={elementRef} 
+      className={`opacity-0 scale-75 transition-all duration-700 ease-out ${className}`}
+    >
+      {children}
+    </div>
+  )
+}
+```
+
+## Performance Optimization
+
+### GPU Acceleration
+
+The portfolio includes GPU acceleration utilities:
+
+```css src/index.css
+.transform-gpu {
+  backface-visibility: hidden;
+  transform-style: preserve-3d;
+  -webkit-backface-visibility: hidden;
+  -webkit-transform-style: preserve-3d;
+}
+```
+
+Add this class to animated elements for better performance:
+
+```jsx
+<div className="animate-float transform-gpu">
+  GPU-accelerated animation
+</div>
+```
+
+<Tip>
+Use GPU acceleration for animations involving transforms, but avoid overuse as it increases memory usage.
+</Tip>
+
+### Animation Best Practices
+
+1. **Use `will-change` sparingly** - Only on actively animating elements
+2. **Prefer transforms** - Use `transform` over `position` changes
+3. **Reduce motion** - Respect user preferences with `prefers-reduced-motion`
+4. **Stagger animations** - Use delay props to avoid overwhelming users
+
+## Animation Timing Reference
+
+| Duration | Use Case | Example |
+|----------|----------|----------|
+| 0.2s | Quick transitions | Button hover, fade-scale |
+| 0.5-1s | UI transitions | Modal open/close |
+| 2-3s | Ambient effects | Shimmer, pulse |
+| 4-6s | Decorative | Float, glow-pulse |
+
+<Note>
+All animations use `ease-in-out` or `ease-out` timing functions for smooth, natural motion.
+</Note>

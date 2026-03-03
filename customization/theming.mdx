@@ -1,0 +1,237 @@
+---
+title: 'Theme Customization'
+description: 'Customize your portfolio theme including colors, fonts, and visual effects'
+---
+
+## Theme System Overview
+
+The portfolio uses Tailwind CSS's theme extension system to create a cohesive design with glassmorphism effects, custom animations, and carefully crafted color palettes.
+
+## Color Palette
+
+### Primary Colors
+
+The portfolio uses an indigo/purple color scheme. These colors appear in gradients, shadows, and accents:
+
+- **Indigo**: `rgb(99, 102, 241)` - Primary accent color
+- **Purple**: `rgb(139, 92, 246)` - Secondary accent color
+
+<Tip>
+These colors are used throughout shadows, gradients, and the scrollbar. Search for these RGB values in your config files to update the entire theme.
+</Tip>
+
+### Glassmorphism Layers
+
+The theme includes multiple glass effect layers for different use cases:
+
+<CodeGroup>
+```js Light Backgrounds
+'glass-light': 'rgba(255, 255, 255, 0.35)',
+'glass-card': 'rgba(255, 255, 255, 0.3)',
+'glass-nav': 'rgba(255, 255, 255, 0.8)',
+'glass-modal': 'rgba(255, 255, 255, 0.9)',
+```
+
+```js Dark Backgrounds  
+'glass': 'rgba(24, 23, 23, 0.42)',
+'glass-dark': 'rgba(255, 255, 255, 0.15)',
+'glass-nav-dark': 'rgba(17, 24, 39, 0.8)',
+'glass-modal-dark': 'rgba(17, 24, 39, 0.9)',
+```
+</CodeGroup>
+
+## Typography
+
+### Font Configuration
+
+The portfolio uses a two-tier font system:
+
+<Steps>
+  <Step title="Header Font">
+    Custom font for `h1` and `h2` elements:
+    ```js tailwind.config.js
+    fontFamily: {
+      'header': ['HeaderFont', 'Inter', 'sans-serif'],
+    }
+    ```
+  </Step>
+
+  <Step title="Body Font">
+    Inter is used for all body text:
+    ```css src/index.css
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+    ```
+  </Step>
+</Steps>
+
+### Customizing Fonts
+
+To use your own custom font:
+
+<Steps>
+  <Step title="Add Font File">
+    Place your font file (`.woff2` recommended) in `/public/fonts/`
+  </Step>
+
+  <Step title="Update @font-face">
+    ```css src/index.css
+    @font-face {
+      font-family: 'YourFontName';
+      src: url('/fonts/your-font-file.woff2') format('woff2');
+      font-weight: normal;
+      font-style: normal;
+      font-display: swap;
+    }
+    ```
+  </Step>
+
+  <Step title="Update Tailwind Config">
+    ```js tailwind.config.js
+    fontFamily: {
+      'header': ['YourFontName', 'Inter', 'sans-serif'],
+    }
+    ```
+  </Step>
+</Steps>
+
+<Note>
+Use `font-display: swap` to prevent invisible text while fonts load.
+</Note>
+
+## Shadow System
+
+Custom shadows create depth and enhance the glassmorphism effect:
+
+```js tailwind.config.js
+boxShadow: {
+  'glass': '0 8px 32px 0 rgba(99, 102, 241, 0.15)',
+  'glass-sm': '0 4px 16px 0 rgba(99, 102, 241, 0.1)',
+  'glass-lg': '0 12px 40px 0 rgba(99, 102, 241, 0.2)',
+  'glass-inset': 'inset 0 1px 0 0 rgba(255, 255, 255, 0.3)',
+}
+```
+
+### Shadow Usage Guide
+
+| Class | Use Case | Example |
+|-------|----------|----------|
+| `shadow-glass-sm` | Small cards, buttons | Navigation items |
+| `shadow-glass` | Standard cards | Project cards |
+| `shadow-glass-lg` | Modals, important elements | Contact modal |
+| `shadow-glass-inset` | Input fields | Form inputs |
+
+## Backdrop Blur
+
+Custom blur values for enhanced glassmorphism:
+
+```js tailwind.config.js
+backdropBlur: {
+  xs: '2px',
+}
+```
+
+Combined with Tailwind's default blur values:
+- `backdrop-blur-xs` - 2px (custom)
+- `backdrop-blur-sm` - 4px
+- `backdrop-blur-md` - 12px
+- `backdrop-blur-lg` - 16px
+- `backdrop-blur-xl` - 24px
+- `backdrop-blur-2xl` - 40px
+
+<Warning>
+Heavy backdrop blur can impact performance on lower-end devices. Use `backdrop-blur-xl` and `backdrop-blur-2xl` sparingly.
+</Warning>
+
+## Border System
+
+Glass-themed borders with varying opacity:
+
+```js tailwind.config.js
+borderColor: {
+  'glass': 'rgba(255, 255, 255, 0.4)',
+  'glass-light': 'rgba(255, 255, 255, 0.6)',
+  'glass-dark': 'rgba(255, 255, 255, 0.2)',
+}
+```
+
+Use these classes:
+- `border-glass-light` - High contrast borders
+- `border-glass` - Standard borders
+- `border-glass-dark` - Subtle borders
+
+## Global Styles
+
+### Smooth Scrolling
+
+```css src/index.css
+html {
+  scroll-behavior: smooth;
+}
+```
+
+### Mobile Optimizations
+
+Remove tap highlights and default browser styles:
+
+```css src/index.css
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+input, textarea {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+```
+
+## Creating a Custom Theme
+
+To create your own color theme:
+
+<Steps>
+  <Step title="Choose Your Colors">
+    Select primary and secondary colors. Use a tool like [Coolors](https://coolors.co) or [Adobe Color](https://color.adobe.com).
+  </Step>
+
+  <Step title="Update Glass Colors">
+    Replace RGBA values in `tailwind.config.js` backgroundColor and borderColor sections.
+  </Step>
+
+  <Step title="Update Shadows">
+    Change the RGB values in boxShadow to match your primary color:
+    ```js
+    'glass': '0 8px 32px 0 rgba(YOUR, RGB, VALUES, 0.15)',
+    ```
+  </Step>
+
+  <Step title="Update Gradients">
+    Modify hero section gradients in `src/index.css`:
+    ```css
+    .hero-section {
+      background: radial-gradient(ellipse at center top, 
+                    rgba(YOUR, RGB, VALUES, 0.1) 0%, transparent 50%);
+    }
+    ```
+  </Step>
+
+  <Step title="Update Scrollbar">
+    Change scrollbar gradient colors in `src/index.css`.
+  </Step>
+</Steps>
+
+## Theme Consistency Tips
+
+<Tip>
+**Maintain contrast ratios**: Ensure text remains readable on glass backgrounds. Use tools like [WebAIM Contrast Checker](https://webaim.org/resources/contrastchecker/).
+</Tip>
+
+<Tip>
+**Test on different backgrounds**: Glassmorphism effects look different depending on what's behind them. Test your theme with various background images.
+</Tip>
+
+<Note>
+When changing theme colors, rebuild your project (`npm run build`) to ensure Tailwind purges old classes and generates new ones.
+</Note>

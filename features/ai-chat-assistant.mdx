@@ -1,0 +1,377 @@
+---
+title: AI Chat Assistant
+description: Learn about the intelligent AI chat assistant that helps visitors interact with your portfolio and blog content
+---
+
+# AI Chat Assistant
+
+The AI Chat Assistant is a sophisticated conversational interface built with React and TypeScript that provides an interactive way for visitors to learn about your experience, projects, and skills. It features context-aware responses and blog post summarization capabilities.
+
+## Overview
+
+The chat assistant is powered by OpenAI's GPT-4 model and integrates seamlessly with your portfolio, offering both general information about your work and specific insights into blog posts.
+
+### Key Features
+
+<Info>
+  - Context-aware responses about your experience and projects
+  - Blog post summarization and Q&A
+  - Markdown rendering with syntax highlighting
+  - Fullscreen and windowed modes
+  - Chat history management
+  - Responsive design for mobile and desktop
+</Info>
+
+## Implementation
+
+The chat assistant is implemented in `src/components/ChatBox.tsx` and uses React hooks for state management.
+
+### Core Architecture
+
+<Steps>
+  <Step title="Message State Management">
+    The component maintains conversation history using React's `useState` hook:
+
+    ```tsx
+    const [messages, setMessages] = useState<Message[]>([]);
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    ```
+
+    **Location:** src/components/ChatBox.tsx:34-36
+  </Step>
+
+  <Step title="API Integration">
+    Messages are sent to a Netlify serverless function that interfaces with OpenAI:
+
+    ```tsx
+    const API_URL = process.env.NODE_ENV === 'development' 
+      ? '/.netlify/functions/chat'
+      : 'https://ethanclinick.netlify.app/.netlify/functions/chat';
+    ```
+
+    **Location:** src/components/ChatBox.tsx:9-11
+  </Step>
+
+  <Step title="Context-Aware Responses">
+    The system prompt can be enhanced with blog context for post-specific conversations:
+
+    ```tsx
+    const createSystemPromptWithBlogContext = useCallback((context?: BlogContext) => {
+      const basePrompt = createEnhancedSystemPrompt();
+      
+      if (context) {
+        return `${basePrompt}
+
+    You are also helping the user understand a blog post. Here is the blog context:
+    
+    Blog Title: ${context.title}
+    Blog Excerpt: ${context.excerpt}
+    
+    Blog Content:
+    ${context.content}`;
+      }
+      
+      return basePrompt;
+    }, []);
+    ```
+
+    **Location:** src/components/ChatBox.tsx:73-91
+  </Step>
+</Steps>
+
+## Configuration
+
+### API Parameters
+
+The chat assistant uses the following OpenAI API configuration:
+
+```tsx
+body: JSON.stringify({
+  messages: [
+    {
+      role: 'system',
+      content: createSystemPromptWithBlogContext(activeContext)
+    },
+    ...messages,
+    userMessage
+  ],
+  temperature: 0.7,
+  top_p: 0.9,
+  max_tokens: 4000,
+  model: "gpt-4o-mini"
+})
+```
+
+**Location:** src/components/ChatBox.tsx:114-126
+
+<Note>
+  - **temperature: 0.7** - Balanced creativity and consistency
+  - **top_p: 0.9** - Nucleus sampling for diverse responses
+  - **max_tokens: 4000** - Sufficient length for detailed answers
+  - **model: gpt-4o-mini** - Cost-effective GPT-4 variant
+</Note>
+
+## Features in Detail
+
+### Markdown Rendering
+
+The assistant uses `react-markdown` for rich text formatting with custom components:
+
+<Tabs>
+  <Tab title="Code Blocks">
+    ```tsx
+    code: ({inline, className, children}) => {
+      if (inline) {
+        return <code className="bg-gray-800 text-orange-400 px-1.5 py-0.5 rounded text-sm font-mono">{children}</code>;
+      }
+      return (
+        <div className="my-4">
+          <pre className="bg-gray-900 border border-gray-800 p-4 rounded-lg overflow-x-auto">
+            <code className={`${className} text-sm font-mono`}>{children}</code>
+          </pre>
+        </div>
+      );
+    }
+    ```
+
+    **Location:** src/components/ChatBox.tsx:203-213
+  </Tab>
+
+  <Tab title="Links">
+    ```tsx
+    a: ({href, children}) => (
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-orange-400 hover:text-orange-300 hover:underline transition-colors duration-200"
+      >
+        {children}
+      </a>
+    )
+    ```
+
+    **Location:** src/components/ChatBox.tsx:220-229
+  </Tab>
+
+  <Tab title="Lists">
+    ```tsx
+    ul: ({children}) => (
+      <ul className="list-disc pl-5 mb-4 space-y-2 marker:text-gray-500">{children}</ul>
+    ),
+    ol: ({children}) => (
+      <ol className="list-decimal pl-5 mb-4 space-y-2 marker:text-gray-500">{children}</ol>
+    )
+    ```
+
+    **Location:** src/components/ChatBox.tsx:194-199
+  </Tab>
+</Tabs>
+
+### Response Formatting
+
+AI responses are automatically formatted for better readability:
+
+```tsx
+const formatAIResponse = (text: string): string => {
+  // Add double line breaks between sections
+  text = text.replace(/\n(?=[A-Z])/g, '\n\n');
+  
+  // Add spacing after punctuation if missing
+  text = text.replace(/([.!?])([A-Z])/g, '$1\n\n$2');
+  
+  // Ensure proper spacing around lists
+  text = text.replace(/([.!?])\n([•\-*])/g, '$1\n\n$2');
+  
+  // Add spacing around code blocks
+  text = text.replace(/```/g, '\n```\n');
+  
+  return text.trim();
+};
+```
+
+**Location:** src/components/ChatBox.tsx:14-30
+
+### Blog Context Integration
+
+When opened from a blog post, the assistant can summarize and discuss the content:
+
+```tsx
+const handleSummarize = () => {
+  if (post) {
+    setBlogContextForChat({
+      title: post.title,
+      content: post.content,
+      excerpt: post.excerpt,
+    });
+    setIsChatOpen(true);
+  }
+};
+```
+
+**Source:** src/app/BlogPost.tsx:52-61
+
+<Tip>
+  Visitors can click the "AI Summary" button on any blog post to get an instant summary and ask follow-up questions about the content.
+</Tip>
+
+## User Interface
+
+### Layout Modes
+
+The chat assistant supports two display modes:
+
+1. **Windowed Mode** (Default)
+   - Fixed position at bottom-right on desktop
+   - Full screen on mobile
+   - Width: 480px on desktop
+   - Max height: 80vh
+
+2. **Fullscreen Mode** (Desktop only)
+   - Expands to cover entire viewport
+   - Centered content with max-width constraint
+   - Better for extended conversations
+
+```tsx
+<div className={`fixed ${
+  isFullscreen 
+    ? 'inset-0 w-full h-screen rounded-none' 
+    : 'inset-0 md:inset-auto md:bottom-8 md:right-8 w-full md:w-[480px] h-screen md:h-auto md:max-h-[80vh] rounded-none md:rounded-2xl'
+} bg-black border border-gray-800 shadow-2xl flex flex-col z-50`}>
+```
+
+**Location:** src/components/ChatBox.tsx:261-265
+
+### Interactive Controls
+
+<Steps>
+  <Step title="Clear Chat">
+    Removes all messages except the greeting:
+
+    ```tsx
+    const handleClearChat = () => {
+      setMessages([{
+        role: 'assistant',
+        content: currentBlogContext 
+          ? `Chat cleared. I still have context about the blog "${currentBlogContext.title}".`
+          : "Hi! I'm Ethan's AI assistant. Feel free to ask me about his experience..."
+      }]);
+    };
+    ```
+
+    **Location:** src/components/ChatBox.tsx:245-252
+  </Step>
+
+  <Step title="Toggle Fullscreen">
+    Switches between windowed and fullscreen modes on desktop:
+
+    ```tsx
+    const toggleFullscreen = () => {
+      setIsFullscreen(!isFullscreen);
+    };
+    ```
+
+    **Location:** src/components/ChatBox.tsx:254-256
+  </Step>
+
+  <Step title="Close Chat">
+    Closes the chat window and optionally clears blog context:
+
+    ```tsx
+    const handleChatClose = () => {
+      setIsChatOpen(false);
+      setBlogContextForChat(undefined);
+    };
+    ```
+
+    **Source:** src/app/BlogPost.tsx:63-66
+  </Step>
+</Steps>
+
+## Usage Examples
+
+### Opening the Chat Assistant
+
+```tsx
+import ChatBox from './components/ChatBox';
+
+function App() {
+  const [isChatOpen, setIsChatOpen] = useState(false);
+
+  return (
+    <>
+      <button onClick={() => setIsChatOpen(true)}>
+        Open Chat
+      </button>
+      
+      <ChatBox 
+        isOpen={isChatOpen}
+        onClose={() => setIsChatOpen(false)}
+        isDarkMode={true}
+      />
+    </>
+  );
+}
+```
+
+### With Blog Context
+
+```tsx
+<ChatBox 
+  isOpen={isChatOpen}
+  onClose={handleChatClose}
+  blogContext={{
+    title: post.title,
+    content: post.content,
+    excerpt: post.excerpt
+  }}
+  initialMessage="Please summarize this blog post for me."
+/>
+```
+
+## TypeScript Interfaces
+
+```tsx
+interface Message {
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+}
+
+interface BlogContext {
+  title: string;
+  content: string;
+  excerpt: string;
+}
+
+interface ChatBoxProps {
+  isOpen: boolean;
+  onClose: () => void;
+  isDarkMode?: boolean;
+  initialMessage?: string;
+  blogContext?: BlogContext;
+}
+```
+
+**Source:** src/types/types.ts
+
+## Best Practices
+
+<Note>
+  1. **API Security** - Never expose API keys in client-side code. Use serverless functions or backend proxies.
+  2. **Rate Limiting** - Implement rate limiting to prevent API abuse.
+  3. **Error Handling** - Always provide user-friendly error messages.
+  4. **Loading States** - Show clear loading indicators during API calls.
+  5. **Accessibility** - Ensure keyboard navigation and screen reader compatibility.
+</Note>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Blog System" icon="book" href="/features/blog-system">
+    Learn how blog posts integrate with the AI assistant
+  </Card>
+  <Card title="Project Showcase" icon="rocket" href="/features/project-showcase">
+    Explore the interactive project display system
+  </Card>
+</CardGroup>

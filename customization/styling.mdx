@@ -1,0 +1,204 @@
+---
+title: 'Styling Customization'
+description: 'Learn how to customize styles, colors, and design elements in your portfolio'
+---
+
+## Overview
+
+Your portfolio uses Tailwind CSS with custom extensions for glassmorphism effects, shadows, and other design elements. All styling is configured in `tailwind.config.js` and `src/index.css`.
+
+## Tailwind Configuration
+
+### Custom Font Families
+
+The portfolio uses a custom header font alongside Inter for body text:
+
+```js tailwind.config.js
+fontFamily: {
+  'header': ['HeaderFont', 'Inter', 'sans-serif'],
+}
+```
+
+The HeaderFont is loaded in `src/index.css`:
+
+```css src/index.css
+@font-face {
+  font-family: 'HeaderFont';
+  src: url('/fonts/6f324551b041d4dd-s.p.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+```
+
+<Tip>
+Replace the font file in `/public/fonts/` and update the `src` path to use your own custom font.
+</Tip>
+
+### Glassmorphism Colors
+
+The portfolio features extensive glassmorphism effects with custom background colors:
+
+<CodeGroup>
+```js Background Colors
+backgroundColor: {
+  'glass': 'rgba(24, 23, 23, 0.42)',
+  'glass-dark': 'rgba(255, 255, 255, 0.15)',
+  'glass-light': 'rgba(255, 255, 255, 0.35)',
+  'glass-card': 'rgba(255, 255, 255, 0.3)',
+  'glass-nav': 'rgba(255, 255, 255, 0.8)',
+  'glass-modal': 'rgba(255, 255, 255, 0.9)',
+  'glass-nav-dark': 'rgba(17, 24, 39, 0.8)',
+  'glass-modal-dark': 'rgba(17, 24, 39, 0.9)',
+}
+```
+
+```js Border Colors
+borderColor: {
+  'glass': 'rgba(255, 255, 255, 0.4)',
+  'glass-light': 'rgba(255, 255, 255, 0.6)',
+  'glass-dark': 'rgba(255, 255, 255, 0.2)',
+}
+```
+
+```js Box Shadows
+boxShadow: {
+  'glass': '0 8px 32px 0 rgba(99, 102, 241, 0.15)',
+  'glass-sm': '0 4px 16px 0 rgba(99, 102, 241, 0.1)',
+  'glass-lg': '0 12px 40px 0 rgba(99, 102, 241, 0.2)',
+  'glass-inset': 'inset 0 1px 0 0 rgba(255, 255, 255, 0.3)',
+}
+```
+</CodeGroup>
+
+## Custom Component Classes
+
+The portfolio includes reusable glassmorphism component classes defined in `src/index.css`:
+
+### Glass Components
+
+<Steps>
+  <Step title="Basic Glass">
+    ```css
+    .glass {
+      @apply bg-glass backdrop-blur-md border border-glass shadow-glass;
+    }
+    ```
+    Use for general glassmorphism effects.
+  </Step>
+
+  <Step title="Glass Card">
+    ```css
+    .glass-card {
+      @apply bg-glass-card backdrop-blur-lg border border-glass-light shadow-glass-sm;
+    }
+    ```
+    Use for card components with enhanced blur.
+  </Step>
+
+  <Step title="Glass Navigation">
+    ```css
+    .glass-nav {
+      @apply bg-glass-nav backdrop-blur-xl border-b border-glass;
+    }
+    ```
+    Pre-configured for navigation bars.
+  </Step>
+
+  <Step title="Glass Modal">
+    ```css
+    .glass-modal {
+      @apply bg-glass-modal backdrop-blur-2xl border border-glass-light shadow-glass-lg;
+    }
+    ```
+    Use for modal dialogs with maximum blur.
+  </Step>
+</Steps>
+
+### Interactive Elements
+
+```css src/index.css
+.glass-button {
+  @apply bg-glass-light backdrop-blur-sm border border-glass-light 
+         shadow-glass-sm hover:bg-glass-card hover:shadow-glass 
+         transition-all duration-300;
+}
+
+.glass-input {
+  @apply bg-glass backdrop-blur-md border border-glass-dark 
+         focus:border-glass-light shadow-glass-inset;
+}
+```
+
+## Custom Scrollbar
+
+The portfolio features a custom glassmorphism scrollbar:
+
+```css src/index.css
+.overflow-y-auto::-webkit-scrollbar {
+  width: 8px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, 
+    rgba(139, 92, 246, 0.4), 
+    rgba(99, 102, 241, 0.4));
+  border-radius: 4px;
+  backdrop-filter: blur(4px);
+}
+```
+
+<Note>
+The scrollbar uses purple gradients to match the overall theme. Adjust the RGBA values to change colors.
+</Note>
+
+## Hero Section Styling
+
+Special utility classes for the hero section:
+
+```css src/index.css
+.hero-curve {
+  clip-path: ellipse(100% 100% at 50% 0%);
+}
+
+.hero-section {
+  background: radial-gradient(ellipse at center top, 
+                rgba(99, 102, 241, 0.1) 0%, transparent 50%),
+              radial-gradient(ellipse at center bottom, 
+                rgba(139, 92, 246, 0.1) 0%, transparent 50%);
+}
+```
+
+## Customization Tips
+
+<Warning>
+When changing glassmorphism opacity values, maintain the balance between transparency and readability. Test on different backgrounds.
+</Warning>
+
+### Changing the Color Scheme
+
+To change from purple to another color:
+
+1. Update shadow colors in `tailwind.config.js` (replace `99, 102, 241` RGB values)
+2. Update scrollbar gradient in `src/index.css`
+3. Update hero section gradients
+4. Update any hardcoded color values in components
+
+### Adding New Glass Variants
+
+Add new glassmorphism variants in `tailwind.config.js`:
+
+```js tailwind.config.js
+backgroundColor: {
+  // ... existing colors
+  'glass-custom': 'rgba(YOUR, RGB, VALUES, 0.4)',
+}
+```
+
+Then create a utility class in `src/index.css`:
+
+```css src/index.css
+.glass-custom {
+  @apply bg-glass-custom backdrop-blur-lg border border-glass shadow-glass;
+}
+```

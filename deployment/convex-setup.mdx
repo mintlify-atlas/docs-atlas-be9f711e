@@ -1,0 +1,464 @@
+---
+title: "Convex Database Setup"
+description: "Configure Convex for real-time blog view tracking and analytics"
+---
+
+## Overview
+
+This portfolio uses Convex as a real-time serverless database to track blog post views. Convex provides a type-safe, reactive database that automatically syncs data between your backend and frontend.
+
+## Why Convex?
+
+- **Real-time Updates**: View counts update automatically across all connected clients
+- **Type Safety**: Full TypeScript support with generated types
+- **Serverless**: No infrastructure management required
+- **Generous Free Tier**: Perfect for personal portfolios
+- **Zero Configuration**: Deploy with a single command
+
+## Initial Setup
+
+<Steps>
+  <Step title="Install Convex">
+    Install the Convex client library:
+
+    ```bash
+    npm install convex
+    ```
+  </Step>
+
+  <Step title="Initialize Convex">
+    Set up Convex in your project:
+
+    ```bash
+    npx convex dev
+    ```
+
+    This command will:
+    - Create a new Convex project (or connect to existing)
+    - Generate configuration files
+    - Set up authentication
+    - Start the development server
+  </Step>
+
+  <Step title="Configure convex.json">
+    Create `convex.json` in your project root:
+
+    ```json convex.json
+    {
+      "functions": "convex"
+    }
+    ```
+
+    This tells Convex where to find your database functions.
+  </Step>
+</Steps>
+
+## Database Schema
+
+Define your database schema in `convex/schema.ts`:
+
+```typescript convex/schema.ts
+import { defineSchema, defineTable } from "convex/server";
+import { v } from "convex/values";
+
+export default defineSchema({
+  blogViews: defineTable({
+    slug: v.string(),
+    count: v.number(),
+    updatedAt: v.number(),
+  }).index("by_slug", ["slug"]),
+});
+```
+
+### Schema Breakdown
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `slug` | String | Unique identifier for the blog post (e.g., "my-first-post") |
+| `count` | Number | Total number of views for this post |
+| `updatedAt` | Number | Timestamp of last view (milliseconds since epoch) |
+
+<Info>
+  The `by_slug` index enables fast lookups by blog post slug, essential for real-time view tracking.
+</Info>
+
+## Database Functions
+
+Implement view tracking functions in `convex/views.ts`:
+
+```typescript convex/views.ts
+import { v } from "convex/values";
+import { mutation, query } from "./_generated/server";
+
+export const incrementView = mutation({
+  args: {
+    slug: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const existing = await ctx.db
+      .query("blogViews")
+      .withIndex("by_slug", (q) => q.eq("slug", args.slug))
+      .unique();
+
+    if (existing) {
+      const nextCount = existing.count + 1;
+      await ctx.db.patch(existing._id, {
+        count: nextCount,
+        updatedAt: Date.now(),
+      });
+      return nextCount;
+    }
+
+    await ctx.db.insert("blogViews", {
+      slug: args.slug,
+      count: 1,
+      updatedAt: Date.now(),
+    });
+
+    return 1;
+  },
+});
+
+export const getViewCount = query({
+  args: {
+    slug: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const existing = await ctx.db
+      .query("blogViews")
+      .withIndex("by_slug", (q) => q.eq("slug", args.slug))
+      .unique();
+
+    return existing ? existing.count : 0;
+  },
+});
+```
+
+### Function Details
+
+#### `incrementView` (Mutation)
+
+Increments the view count for a blog post:
+
+1. Queries the database for existing view record by slug
+2. If exists: increments count and updates timestamp
+3. If new: creates record with count of 1
+4. Returns the new view count
+
+<Note>
+  Mutations modify data and are strongly consistent. Use them for writes.
+</Note>
+
+#### `getViewCount` (Query)
+
+Retrieves the current view count for a blog post:
+
+1. Queries the database by slug
+2. Returns count if exists, otherwise returns 0
+
+<Note>
+  Queries are read-only and reactive. Components using queries automatically re-render when data changes.
+</Note>
+
+## Frontend Integration
+
+### Setup Convex Provider
+
+Wrap your app with the Convex provider:
+
+<CodeGroup>
+```typescript React (Next.js)
+import { ConvexProvider, ConvexReactClient } from "convex/react";
+
+const convex = new ConvexReactClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
+
+function App({ Component, pageProps }) {
+  return (
+    <ConvexProvider client={convex}>
+      <Component {...pageProps} />
+    </ConvexProvider>
+  );
+}
+
+export default App;
+```
+
+```typescript React (Vite)
+import { ConvexProvider, ConvexReactClient } from "convex/react";
+import { StrictMode } from "react";
+import { createRoot } from "react-dom/client";
+import App from "./App";
+
+const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL);
+
+createRoot(document.getElementById("root")!).render(
+  <StrictMode>
+    <ConvexProvider client={convex}>
+      <App />
+    </ConvexProvider>
+  </StrictMode>
+);
+```
+</CodeGroup>
+
+### Track Blog Views
+
+Implement view tracking in your blog post component:
+
+```typescript BlogPost.tsx
+import { useQuery, useMutation } from "convex/react";
+import { api } from "../convex/_generated/api";
+import { useEffect } from "react";
+
+function BlogPost({ slug }: { slug: string }) {
+  const viewCount = useQuery(api.views.getViewCount, { slug });
+  const incrementView = useMutation(api.views.incrementView);
+
+  useEffect(() => {
+    // Increment view count when post is loaded
+    incrementView({ slug });
+  }, [slug, incrementView]);
+
+  return (
+    <div>
+      <h1>My Blog Post</h1>
+      <p>Views: {viewCount ?? 0}</p>
+      {/* Your blog content */}
+    </div>
+  );
+}
+
+export default BlogPost;
+```
+
+<Warning>
+  The `useEffect` hook will increment views on every component mount. Consider implementing view throttling or unique visitor tracking to prevent inflated counts.
+</Warning>
+
+### Display All Blog Stats
+
+Create a query to fetch all blog post views:
+
+```typescript convex/views.ts
+export const getAllViews = query({
+  handler: async (ctx) => {
+    return await ctx.db.query("blogViews").collect();
+  },
+});
+```
+
+Use it in your blog index:
+
+```typescript BlogList.tsx
+import { useQuery } from "convex/react";
+import { api } from "../convex/_generated/api";
+
+function BlogList() {
+  const allViews = useQuery(api.views.getAllViews);
+
+  return (
+    <div>
+      {allViews?.map((view) => (
+        <div key={view.slug}>
+          <h3>{view.slug}</h3>
+          <p>{view.count} views</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export default BlogList;
+```
+
+## Environment Variables
+
+<CodeGroup>
+```bash .env.local (Next.js)
+NEXT_PUBLIC_CONVEX_URL=https://your-project.convex.cloud
+```
+
+```bash .env (Vite)
+VITE_CONVEX_URL=https://your-project.convex.cloud
+```
+</CodeGroup>
+
+<Info>
+  The Convex URL is automatically provided when you run `npx convex dev`. Copy it from the terminal output.
+</Info>
+
+## Deployment
+
+<Steps>
+  <Step title="Deploy Convex Functions">
+    Deploy your database functions to production:
+
+    ```bash
+    npx convex deploy
+    ```
+
+    This command:
+    - Pushes your schema and functions to Convex
+    - Generates production API credentials
+    - Provides your production Convex URL
+  </Step>
+
+  <Step title="Set Production Environment Variables">
+    Add the production Convex URL to your hosting platform (Netlify, Vercel, etc.):
+
+    ```bash
+    NEXT_PUBLIC_CONVEX_URL=https://your-project.convex.cloud
+    ```
+  </Step>
+
+  <Step title="Deploy Your Site">
+    Deploy your frontend with the updated environment variables. Convex will automatically handle the connection.
+  </Step>
+</Steps>
+
+## Database Indexes
+
+The `by_slug` index optimizes queries by blog post slug:
+
+```typescript
+.index("by_slug", ["slug"])
+```
+
+### Why Indexes Matter
+
+- **Performance**: Enables O(log n) lookups instead of O(n) scans
+- **Scalability**: Critical as your blog grows
+- **Cost Efficiency**: Reduces function execution time
+
+<Note>
+  Always create indexes for fields you frequently query. Convex automatically uses the most efficient index available.
+</Note>
+
+## Type Safety
+
+Convex generates TypeScript types automatically. Import them in your frontend:
+
+```typescript
+import { api } from "../convex/_generated/api";
+import type { Doc, Id } from "../convex/_generated/dataModel";
+
+// Type-safe document reference
+type BlogView = Doc<"blogViews">;
+
+// Type-safe ID
+type BlogViewId = Id<"blogViews">;
+```
+
+## Advanced Features
+
+### Pagination
+
+Implement pagination for large datasets:
+
+```typescript convex/views.ts
+export const paginatedViews = query({
+  args: {
+    paginationOpts: paginationOptsValidator,
+  },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("blogViews")
+      .order("desc")
+      .paginate(args.paginationOpts);
+  },
+});
+```
+
+### Real-time Subscriptions
+
+Convex queries are reactive by default. Components automatically update when data changes:
+
+```typescript
+// This component re-renders whenever the view count changes
+const viewCount = useQuery(api.views.getViewCount, { slug });
+```
+
+### Scheduled Functions
+
+Reset view counts weekly (example):
+
+```typescript convex/crons.ts
+import { cronJobs } from "convex/server";
+import { internal } from "./_generated/api";
+
+const crons = cronJobs();
+
+crons.weekly(
+  "reset weekly views",
+  { dayOfWeek: "monday", hourUTC: 0, minuteUTC: 0 },
+  internal.views.resetWeeklyViews
+);
+
+export default crons;
+```
+
+## Best Practices
+
+<Steps>
+  <Step title="Use Indexes Wisely">
+    Create indexes for all fields you query frequently. Check query performance in the Convex dashboard.
+  </Step>
+
+  <Step title="Implement Rate Limiting">
+    Prevent view count inflation by throttling increments:
+    
+    ```typescript
+    // Only increment once per session
+    const hasViewed = sessionStorage.getItem(`viewed-${slug}`);
+    if (!hasViewed) {
+      incrementView({ slug });
+      sessionStorage.setItem(`viewed-${slug}`, "true");
+    }
+    ```
+  </Step>
+
+  <Step title="Monitor Usage">
+    Track your database usage in the Convex dashboard to stay within free tier limits.
+  </Step>
+
+  <Step title="Validate Input">
+    Convex automatically validates function arguments based on your schema. Always define argument validators.
+  </Step>
+</Steps>
+
+## Troubleshooting
+
+### Connection Issues
+
+```
+Error: Failed to connect to Convex
+```
+
+**Solution**: Verify your `CONVEX_URL` environment variable is set correctly and restart your dev server.
+
+### Schema Mismatch
+
+```
+Error: Schema validation failed
+```
+
+**Solution**: Run `npx convex dev` to sync your schema changes. Clear your browser cache if issues persist.
+
+### Missing Generated Files
+
+```
+Error: Cannot find module '../convex/_generated/api'
+```
+
+**Solution**: Run `npx convex dev` to generate type definitions. Ensure `convex.json` points to the correct directory.
+
+## Monitoring and Analytics
+
+Access the Convex dashboard for:
+
+- **Real-time Logs**: Function execution logs and errors
+- **Usage Metrics**: Database reads, writes, and storage
+- **Function Performance**: Execution time and frequency
+- **Data Browser**: Query and modify data directly
+
+Visit [dashboard.convex.dev](https://dashboard.convex.dev) to access these features.

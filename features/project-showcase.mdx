@@ -1,0 +1,431 @@
+---
+title: Project Showcase
+description: Interactive project showcase with scroll-based animations and live previews of featured work
+---
+
+# Project Showcase
+
+The Project Showcase is an immersive, scroll-driven component that displays your featured projects with live website previews, smooth animations, and engaging interactions.
+
+## Overview
+
+The showcase uses advanced scroll tracking to create a "sticky cards" effect on desktop, where projects stack and transition as users scroll. On mobile, it displays as a traditional scrollable grid.
+
+### Key Features
+
+<Info>
+  - Scroll-based card transitions
+  - Live website previews via iframes
+  - Responsive desktop and mobile layouts
+  - Interactive navigation dots
+  - Project metadata display
+  - Tag-based categorization
+  - Smooth animations
+</Info>
+
+## Implementation
+
+The showcase is implemented in `src/components/featured-projects.tsx` using React hooks and scroll event listeners.
+
+### Project Data Structure
+
+```tsx
+const projects = [
+  {
+    id: 1,
+    name: "TradeMind",
+    tech: "React + TypeScript",
+    description: "TradeMind is a smart trading journal and analytics platform helping traders boost profitability through automation and behavioral insights.",
+    color: "from-green-600 via-emerald-700 to-teal-800",
+    image: "https://...",
+    tags: ["AI Analytics", "Trading", "Full Stack"],
+    liveUrl: "https://trademind.pro",
+    mockupContent: {
+      title: "TradeMind",
+      subtitle: "Smart Trading Journal & Analytics Platform",
+      interface: "trading",
+    },
+  },
+  // ... more projects
+];
+```
+
+**Location:** src/components/featured-projects.tsx:11-72
+
+<Tip>
+  Each project includes a `liveUrl` field that enables live website previews directly in the portfolio.
+</Tip>
+
+## Scroll-Based Animation System
+
+### Active Project Tracking
+
+The system tracks which project should be active based on scroll position:
+
+<Steps>
+  <Step title="Scroll Progress Calculation">
+    ```tsx
+    const handleScroll = () => {
+      if (window.innerWidth < 768) return; // Mobile disabled
+      if (userInteracting || programmaticScrolling) return;
+
+      if (!sectionRef.current) return;
+
+      const sectionRect = sectionRef.current.getBoundingClientRect();
+      const sectionHeight = sectionRect.height;
+      const sectionTop = sectionRect.top;
+      const windowHeight = window.innerHeight;
+
+      // Calculate scroll progress within the section
+      const scrollProgress = Math.max(
+        0,
+        Math.min(1, (windowHeight / 2 - sectionTop) / (sectionHeight - windowHeight / 2)),
+      );
+
+      // Determine active project based on scroll progress
+      const projectIndex = Math.floor(scrollProgress * projects.length);
+      const clampedIndex = Math.max(0, Math.min(projects.length - 1, projectIndex));
+
+      if (clampedIndex !== activeProject) {
+        setActiveProject(clampedIndex);
+      }
+    };
+    ```
+
+    **Location:** src/components/featured-projects.tsx:125-153
+  </Step>
+
+  <Step title="Section Height Calculation">
+    The section height is dynamically calculated to create scrollable area:
+
+    ```tsx
+    <section 
+      id="projects" 
+      ref={sectionRef} 
+      className="hidden md:block relative bg-black" 
+      style={{ height: `${100 + projects.length * 100}vh` }}
+    >
+    ```
+
+    This creates a section that's tall enough to allow smooth scrolling through all projects.
+
+    **Location:** src/components/featured-projects.tsx:181-185
+  </Step>
+
+  <Step title="Sticky Positioning">
+    The card container uses sticky positioning to stay in place while scrolling:
+
+    ```tsx
+    <div className="sticky top-0 flex flex-col overflow-hidden">
+      <div className="container mx-auto px-6 h-full flex flex-col py-12">
+        {/* Card stack */}
+      </div>
+    </div>
+    ```
+
+    **Location:** src/components/featured-projects.tsx:205-206
+  </Step>
+</Steps>
+
+### Card Stacking Effect
+
+Projects are stacked with depth and scale transformations:
+
+```tsx
+projects.map((project, index) => {
+  const isActive = index === activeProject;
+  const isPrevious = index < activeProject;
+  const isNext = index > activeProject;
+  
+  let transform = "";
+  let opacity = 1;
+  let zIndex = projects.length - index;
+  let display = "block";
+  
+  if (isPrevious) {
+    transform = `translateY(-${(activeProject - index) * 20}px) scale(${1 - (activeProject - index) * 0.05})`;
+    opacity = 1;
+    zIndex = index;
+    display = "none"; // Hide previous cards completely
+  } else if (isActive) {
+    transform = "translateY(0px) scale(1)";
+    opacity = 1;
+    zIndex = projects.length;
+  } else if (isNext) {
+    transform = `translateY(${(index - activeProject) * 20}px) scale(${1 - (index - activeProject) * 0.05})`;
+    opacity = 1;
+    zIndex = projects.length - index;
+  }
+
+  return (
+    <div
+      key={project.id}
+      className="absolute inset-0 transition-all duration-700 ease-out"
+      style={{ transform, opacity, zIndex, display }}
+    >
+      {/* Project card */}
+    </div>
+  );
+})
+```
+
+**Location:** src/components/featured-projects.tsx:210-245
+
+<Note>
+  The stacking creates a 3D-like effect where upcoming projects appear behind the current one, and previous projects are hidden.
+</Note>
+
+## Interactive Navigation
+
+### Dot Navigation
+
+Users can click dots to jump to specific projects:
+
+```tsx
+const handleDotClick = (projectIndex: number) => {
+  setUserInteracting(true);
+  setProgrammaticScrolling(true);
+  setActiveProject(projectIndex);
+  scrollToProject(projectIndex);
+  
+  // Reset flags after scroll animation completes
+  setTimeout(() => {
+    setProgrammaticScrolling(false);
+  }, 1000); // Match smooth scroll duration
+  
+  setTimeout(() => {
+    setUserInteracting(false);
+  }, 3000); // Give more time after manual navigation
+};
+
+{/* Navigation Dots */}
+<div className="flex space-x-3 mt-8">
+  {projects.map((_, index) => (
+    <button
+      key={index}
+      onClick={() => handleDotClick(index)}
+      className={`h-2 rounded-full transition-all duration-500 ${
+        index === activeProject ? "bg-orange-500 w-8" : "bg-white/20 w-2 hover:bg-white/40"
+      }`}
+    />
+  ))}
+</div>
+```
+
+**Location:** src/components/featured-projects.tsx:106-316
+
+### Programmatic Scrolling
+
+When dots are clicked, the page smoothly scrolls to the target project:
+
+```tsx
+const scrollToProject = (projectIndex: number) => {
+  if (!sectionRef.current) return;
+
+  const sectionHeight = sectionRef.current.offsetHeight;
+  const windowHeight = window.innerHeight;
+  const sectionTop = sectionRef.current.offsetTop;
+  
+  // Calculate the scroll position that corresponds to this project
+  const targetProgress = projectIndex / (projects.length - 1);
+  
+  // Calculate the scroll position needed to achieve this progress
+  const effectiveScrollHeight = sectionHeight - windowHeight / 2;
+  const targetScrollOffset = targetProgress * effectiveScrollHeight;
+  const targetScrollY = sectionTop + targetScrollOffset - windowHeight / 2;
+  
+  // Smooth scroll to the calculated position
+  window.scrollTo({
+    top: Math.max(0, targetScrollY),
+    behavior: 'smooth'
+  });
+};
+```
+
+**Location:** src/components/featured-projects.tsx:81-103
+
+## Live Project Previews
+
+Projects are displayed as live website previews using iframes:
+
+<Tabs>
+  <Tab title="Live Preview">
+    ```tsx
+    {project.liveUrl ? (
+      <iframe
+        src={project.liveUrl}
+        title={project.name}
+        className="absolute inset-0 w-full h-full rounded-xl border-0"
+        allow="fullscreen"
+        loading="lazy"
+      />
+    ) : (
+      <img
+        src={project.image}
+        alt={project.name}
+        className="absolute inset-0 w-full h-full object-cover"
+      />
+    )}
+    ```
+
+    **Location:** src/components/featured-projects.tsx:264-278
+  </Tab>
+
+  <Tab title="Development State">
+    For projects in development, a placeholder overlay is shown:
+
+    ```tsx
+    {project.name === "Tan.ai" ? (
+      <div className="absolute inset-0 w-full h-full flex flex-col items-center justify-center bg-black/60 text-white z-10">
+        <span className="text-5xl mb-4">🚧</span>
+        <span className="text-2xl font-semibold mb-2">In Development</span>
+        <span className="text-lg text-gray-300">Live preview coming soon</span>
+      </div>
+    ) : (
+      {/* Live preview */}
+    )}
+    ```
+
+    **Location:** src/components/featured-projects.tsx:258-263
+  </Tab>
+</Tabs>
+
+<Tip>
+  Using `loading="lazy"` on iframes improves initial page load performance by only loading visible project previews.
+</Tip>
+
+## Responsive Design
+
+The component uses separate layouts for desktop and mobile:
+
+### Desktop Layout (≥768px)
+
+```tsx
+<section className="hidden md:block relative bg-black" style={{ height: `${100 + projects.length * 100}vh` }}>
+  {/* Sticky header */}
+  <div className="sticky top-0 flex flex-col overflow-hidden">
+    {/* Stacked cards with transitions */}
+  </div>
+</section>
+```
+
+**Location:** src/components/featured-projects.tsx:181-327
+
+### Mobile Layout (less than 768px)
+
+```tsx
+<section className="md:hidden bg-black py-12">
+  {/* Simple grid of cards */}
+  <div className="container mx-auto px-4 space-y-8">
+    {projects.map((project, index) => (
+      <ScrollFadeIn key={project.id} delay={index * 100}>
+        {/* Project card */}
+      </ScrollFadeIn>
+    ))}
+  </div>
+</section>
+```
+
+**Location:** src/components/featured-projects.tsx:329-403
+
+<Note>
+  Mobile users get a simpler, more traditional scrollable layout without the sticky card effects, ensuring a smooth experience on smaller devices.
+</Note>
+
+## Project Information Display
+
+Each project shows detailed metadata:
+
+```tsx
+<div className="space-y-4">
+  <div className="flex items-center justify-between">
+    <h3 className="text-3xl font-bold text-white">{currentProject.name}</h3>
+    <span className="text-gray-400">:: {currentProject.tech}</span>
+  </div>
+  <p className="text-gray-400 text-lg leading-relaxed max-w-4xl">
+    {currentProject.description}
+  </p>
+</div>
+
+{/* Project Counter */}
+<div className="text-gray-500 text-sm">
+  {String(activeProject + 1).padStart(2, '0')} / {String(projects.length).padStart(2, '0')}
+</div>
+```
+
+**Location:** src/components/featured-projects.tsx:294-321
+
+## User Interaction Handling
+
+The system pauses automatic scroll tracking during user interaction:
+
+```tsx
+const [userInteracting, setUserInteracting] = useState(false);
+const [programmaticScrolling, setProgrammaticScrolling] = useState(false);
+
+const handleUserInteraction = () => {
+  setUserInteracting(true);
+  clearTimeout(timeoutId);
+  timeoutId = window.setTimeout(() => {
+    setUserInteracting(false);
+  }, 2000); // Resume auto-scroll after 2 seconds of no interaction
+};
+
+window.addEventListener("click", handleUserInteraction);
+window.addEventListener("touchstart", handleUserInteraction);
+```
+
+**Location:** src/components/featured-projects.tsx:76-166
+
+<Tip>
+  This prevents the scroll detection from interfering with user navigation, creating a smoother experience.
+</Tip>
+
+## Animation Components
+
+The showcase uses custom scroll animation components:
+
+```tsx
+import { ScrollFadeIn, ScrollSlideIn } from "../components/scroll-animations";
+
+<ScrollFadeIn delay={200} className="space-y-6">
+  {/* Content fades in as user scrolls */}
+</ScrollFadeIn>
+```
+
+**Location:** src/components/featured-projects.tsx:3, 293
+
+## Best Practices
+
+<Note>
+  1. **Performance** - Disable sticky effects on mobile to prevent performance issues
+  2. **Accessibility** - Provide keyboard navigation for project switching
+  3. **Loading** - Use lazy loading for iframes to improve initial load time
+  4. **Fallbacks** - Show static images for projects without live URLs
+  5. **Error Handling** - Handle iframe load errors gracefully
+  6. **User Control** - Allow manual navigation while maintaining auto-scroll
+</Note>
+
+## Customization
+
+To add or modify projects:
+
+1. Update the `projects` array in `featured-projects.tsx`
+2. Ensure each project has:
+   - Unique `id`
+   - `name` and `tech` stack
+   - Detailed `description`
+   - `liveUrl` or fallback `image`
+   - Relevant `tags`
+3. Adjust section height if adding many projects
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="GitHub Integration" icon="github" href="/features/github-integration">
+    Learn about the GitHub contribution graph
+  </Card>
+  <Card title="Blog System" icon="book" href="/features/blog-system">
+    Explore the blog and content system
+  </Card>
+</CardGroup>

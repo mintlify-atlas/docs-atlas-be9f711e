@@ -1,0 +1,160 @@
+---
+title: ChatBox Component
+description: Interactive AI chat component for portfolio communication with blog context support
+---
+
+# ChatBox Component
+
+The `ChatBox` component provides an interactive AI-powered chat interface that can answer questions about the portfolio owner's experience, projects, and skills. It supports blog-specific context for AI summarization.
+
+## Import
+
+```tsx
+import ChatBox from '../components/ChatBox';
+```
+
+## Usage
+
+```tsx
+import { useState } from 'react';
+import ChatBox from '../components/ChatBox';
+
+function App() {
+  const [isChatOpen, setIsChatOpen] = useState(false);
+
+  return (
+    <>
+      <button onClick={() => setIsChatOpen(true)}>Open Chat</button>
+      <ChatBox 
+        isOpen={isChatOpen}
+        onClose={() => setIsChatOpen(false)}
+        isDarkMode={true}
+      />
+    </>
+  );
+}
+```
+
+## Props
+
+The component accepts props defined by the `ChatBoxProps` interface:
+
+<ParamField path="isOpen" type="boolean" required>
+  Controls the visibility of the chat box. When `false`, the component returns `null`.
+</ParamField>
+
+<ParamField path="onClose" type="() => void" required>
+  Callback function invoked when the user closes the chat box (via close button or actions).
+</ParamField>
+
+<ParamField path="isDarkMode" type="boolean" default="true">
+  Enables dark mode styling for the chat interface. Defaults to `true`.
+</ParamField>
+
+<ParamField path="initialMessage" type="string">
+  An optional initial message to send automatically when the chat opens. Useful for triggering AI summaries.
+</ParamField>
+
+<ParamField path="blogContext" type="BlogContext">
+  Optional blog context object for AI summarization. When provided, the AI will have context about a specific blog post.
+  
+  <Expandable title="BlogContext properties">
+    <ResponseField name="title" type="string" required>
+      The title of the blog post
+    </ResponseField>
+    <ResponseField name="content" type="string" required>
+      The full markdown content of the blog post
+    </ResponseField>
+    <ResponseField name="excerpt" type="string" required>
+      A brief excerpt or summary of the blog post
+    </ResponseField>
+  </Expandable>
+</ParamField>
+
+## Features
+
+### AI Integration
+
+The ChatBox integrates with OpenAI's GPT-4o-mini model to provide intelligent responses about the portfolio owner's background.
+
+```tsx
+// Example with blog context
+const blogContext = {
+  title: "My Latest Project",
+  content: "Full markdown content...",
+  excerpt: "A brief summary..."
+};
+
+<ChatBox
+  isOpen={true}
+  onClose={handleClose}
+  blogContext={blogContext}
+  initialMessage="Please summarize this blog post for me."
+/>
+```
+
+### Message Types
+
+The component uses the `Message` type for chat messages:
+
+<ParamField path="role" type="'user' | 'assistant' | 'system'" required>
+  The role of the message sender
+</ParamField>
+
+<ParamField path="content" type="string" required>
+  The text content of the message
+</ParamField>
+
+### Fullscreen Mode
+
+The chat box supports fullscreen mode on desktop devices:
+
+- Click the maximize icon to enter fullscreen
+- Click the minimize icon to exit fullscreen
+- Mobile devices always display in full screen
+
+### Chat Management
+
+- **Clear Chat**: Resets the conversation while maintaining blog context if present
+- **Auto-scroll**: Automatically scrolls to the latest message
+- **Loading States**: Shows animated loading indicator during AI responses
+
+## Styling
+
+The component uses Tailwind CSS classes and supports:
+
+- Dark theme with gradient backgrounds
+- Responsive design (mobile and desktop)
+- Markdown rendering with custom styles
+- Smooth animations and transitions
+
+## Dependencies
+
+- `react-markdown` - For rendering AI responses with markdown support
+- `lucide-react` - For icons (X, Trash2, Maximize2, Minimize2)
+- Custom `AIInput` component for message input
+- System prompt loader for AI context
+
+## API Configuration
+
+The component automatically configures the API URL based on environment:
+
+```typescript
+const API_URL = process.env.NODE_ENV === 'development' 
+  ? '/.netlify/functions/chat'
+  : 'https://ethanclinick.netlify.app/.netlify/functions/chat';
+```
+
+## Helper Functions
+
+### formatAIResponse
+
+Internal helper that formats AI responses for better readability:
+
+- Adds proper spacing between sections
+- Formats code blocks with syntax highlighting
+- Ensures proper spacing around lists and headings
+
+## Source Location
+
+`src/components/ChatBox.tsx:33`

@@ -1,0 +1,360 @@
+---
+title: Environment Variables
+description: Complete reference for all environment variables required for deployment and development
+---
+
+This portfolio application requires specific environment variables to function correctly. This guide covers all required variables, how to configure them, and where to obtain the necessary API tokens.
+
+## Overview
+
+The application uses two types of environment variables:
+
+<CardGroup cols={2}>
+  <Card title="Client-side Variables" icon="browser">
+    Variables prefixed with `VITE_` are embedded in the client bundle and accessible in browser code
+  </Card>
+  <Card title="Server-side Variables" icon="server">
+    Variables without the `VITE_` prefix are only available in Netlify Functions (serverless backend)
+  </Card>
+</CardGroup>
+
+<Warning>
+  Never expose sensitive API tokens as `VITE_` variables. Only use the `VITE_` prefix for public or non-sensitive configuration.
+</Warning>
+
+## Required Variables
+
+### API_TOKEN
+
+<ParamField path="API_TOKEN" type="string" required>
+  Azure AI API token for chat functionality
+</ParamField>
+
+**Purpose**: Authenticates requests to Azure AI models for the chat assistant feature
+
+**Used by**: Netlify Function at `netlify/functions/chat.ts`
+
+**Scope**: Server-side only (Netlify Functions)
+
+**How to obtain**:
+
+<Steps>
+  <Step title="Access Azure AI">
+    1. Sign in to [Azure Portal](https://portal.azure.com)
+    2. Navigate to Azure AI Services
+  </Step>
+  
+  <Step title="Create or Select Resource">
+    Create a new Azure AI resource or select an existing one
+  </Step>
+  
+  <Step title="Get API Key">
+    1. Go to "Keys and Endpoint"
+    2. Copy either KEY 1 or KEY 2
+  </Step>
+  
+  <Step title="Configure in Netlify">
+    Add to Netlify environment variables as `API_TOKEN`
+  </Step>
+</Steps>
+
+**Function usage**:
+
+```typescript netlify/functions/chat.ts
+const response = await fetch('https://models.inference.ai.azure.com/chat/completions', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${process.env.API_TOKEN}`
+  },
+  body: event.body
+});
+```
+
+### VITE_GITHUB_API_TOKEN
+
+<ParamField path="VITE_GITHUB_API_TOKEN" type="string" optional>
+  GitHub API token for accessing repository data
+</ParamField>
+
+**Purpose**: Enables the portfolio to fetch repository information, projects, and contribution data from GitHub
+
+**Used by**: Client-side code for displaying GitHub statistics and project information
+
+**Scope**: Client-side (embedded in the bundle)
+
+**How to obtain**:
+
+<Steps>
+  <Step title="Access GitHub Settings">
+    1. Go to [github.com](https://github.com)
+    2. Click your profile picture > **Settings**
+  </Step>
+  
+  <Step title="Generate Token">
+    1. Navigate to **Developer settings** > **Personal access tokens** > **Tokens (classic)**
+    2. Click "Generate new token (classic)"
+  </Step>
+  
+  <Step title="Configure Permissions">
+    Select the following scopes:
+    - `public_repo` - Access public repositories
+    - `read:user` - Read user profile data
+  </Step>
+  
+  <Step title="Generate and Copy">
+    1. Click "Generate token"
+    2. Copy the token immediately (you won't be able to see it again)
+  </Step>
+  
+  <Step title="Add to Environment">
+    Add to Netlify as `VITE_GITHUB_API_TOKEN`
+  </Step>
+</Steps>
+
+<Note>
+  This token is optional. If not provided, some GitHub-related features may be limited or disabled.
+</Note>
+
+## Configuration by Environment
+
+### Local Development
+
+Create a `.env` file in the root directory:
+
+```bash .env
+VITE_GITHUB_API_TOKEN=ghp_your_github_token_here
+API_TOKEN=your_azure_ai_token_here
+```
+
+<Warning>
+  Add `.env` to your `.gitignore` file to prevent committing sensitive tokens to version control.
+</Warning>
+
+**Loading environment variables**:
+
+Vite automatically loads `.env` files:
+
+<CodeGroup>
+```typescript Accessing VITE_ variables
+// Client-side code (React components)
+const githubToken = import.meta.env.VITE_GITHUB_API_TOKEN;
+```
+
+```typescript Accessing in Netlify Functions
+// Server-side code (Netlify Functions)
+const apiToken = process.env.API_TOKEN;
+```
+</CodeGroup>
+
+### Netlify Production
+
+<Steps>
+  <Step title="Navigate to Settings">
+    1. Open your site in Netlify dashboard
+    2. Go to **Site settings** > **Environment variables**
+  </Step>
+  
+  <Step title="Add Variables">
+    Click "Add a variable" and enter:
+    
+    **Variable 1:**
+    - Key: `API_TOKEN`
+    - Value: Your Azure AI API token
+    - Scopes: Production, Deploy previews (recommended)
+    
+    **Variable 2:**
+    - Key: `VITE_GITHUB_API_TOKEN`
+    - Value: Your GitHub API token
+    - Scopes: Production, Deploy previews (recommended)
+  </Step>
+  
+  <Step title="Save and Redeploy">
+    1. Click "Save"
+    2. Trigger a new deployment to apply the changes
+  </Step>
+</Steps>
+
+### Using Netlify CLI
+
+When using `netlify dev`, environment variables are automatically synced from your Netlify site:
+
+```bash
+# Login to Netlify
+netlify login
+
+# Link to your site
+netlify link
+
+# Run dev server with environment variables
+netlify dev
+```
+
+<Note>
+  No need to create a `.env` file when using `netlify dev` - variables are pulled from your Netlify site configuration.
+</Note>
+
+## Environment Variable Security
+
+### Best Practices
+
+<Steps>
+  <Step title="Never Commit Tokens">
+    - Always add `.env` to `.gitignore`
+    - Never hardcode API keys in source code
+    - Use environment variables for all sensitive data
+  </Step>
+  
+  <Step title="Use Appropriate Scopes">
+    - Only use `VITE_` prefix for non-sensitive data
+    - Keep API tokens server-side when possible
+    - Grant minimal permissions to API tokens
+  </Step>
+  
+  <Step title="Rotate Tokens Regularly">
+    - Periodically regenerate API tokens
+    - Update tokens in Netlify when changed
+    - Revoke old tokens after updating
+  </Step>
+  
+  <Step title="Monitor Usage">
+    - Review Netlify function logs for unauthorized access
+    - Monitor Azure AI usage for anomalies
+    - Set up alerts for suspicious activity
+  </Step>
+</Steps>
+
+### What NOT to Do
+
+<Warning>
+  **Never** do any of the following:
+  - Commit `.env` files to Git
+  - Hardcode API tokens in source code
+  - Share tokens in public forums or chat
+  - Use production tokens in public repositories
+  - Expose server-side tokens as `VITE_` variables
+</Warning>
+
+## Verifying Configuration
+
+### Local Verification
+
+Test that environment variables are loaded correctly:
+
+<CodeGroup>
+```typescript Check in Component
+// Add to a React component temporarily
+console.log('GitHub Token exists:', !!import.meta.env.VITE_GITHUB_API_TOKEN);
+```
+
+```typescript Check in Function
+// In netlify/functions/chat.ts
+console.log('API Token:', process.env.API_TOKEN ? 'exists' : 'missing');
+```
+</CodeGroup>
+
+<Note>
+  The chat function already includes this check on line 25 of `netlify/functions/chat.ts`
+</Note>
+
+### Production Verification
+
+1. **Check Function Logs**:
+   - Go to Netlify dashboard > **Functions** > **chat**
+   - View recent invocations
+   - Look for "API Token: exists" in logs
+
+2. **Test Chat Functionality**:
+   - Open your deployed site
+   - Try using the chat assistant
+   - Check browser console for errors
+
+3. **Check Build Logs**:
+   - Go to **Deploys** > Latest deploy
+   - Verify no environment variable warnings
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Function returns 'API Token missing'">
+    **Cause**: `API_TOKEN` not configured in Netlify
+    
+    **Solution**:
+    1. Go to Site settings > Environment variables
+    2. Add `API_TOKEN` with your Azure AI key
+    3. Redeploy the site
+  </Accordion>
+  
+  <Accordion title="GitHub data not loading">
+    **Cause**: `VITE_GITHUB_API_TOKEN` not set or invalid
+    
+    **Solution**:
+    1. Verify token is added to environment variables
+    2. Check token has correct permissions (public_repo, read:user)
+    3. Ensure token hasn't expired
+    4. Regenerate token if necessary
+  </Accordion>
+  
+  <Accordion title="Environment variables not updating">
+    **Cause**: Changed variables but site not redeployed
+    
+    **Solution**:
+    1. After changing environment variables in Netlify
+    2. Go to **Deploys**
+    3. Click "Trigger deploy" > "Clear cache and deploy site"
+  </Accordion>
+  
+  <Accordion title="VITE_ variable undefined in production">
+    **Cause**: Variable may not have been available during build time
+    
+    **Solution**:
+    1. Ensure variable is set before deploying
+    2. Clear cache and redeploy
+    3. Check build logs for warnings about missing variables
+  </Accordion>
+</AccordionGroup>
+
+## Package.json Configuration
+
+The `deploy` script in `package.json` demonstrates environment variable usage:
+
+```json package.json
+{
+  "scripts": {
+    "deploy": "cross-env VITE_GITHUB_API_TOKEN=$API_TOKEN gh-pages -d dist --dotfiles"
+  }
+}
+```
+
+This script:
+- Uses `cross-env` for cross-platform compatibility
+- Maps `API_TOKEN` to `VITE_GITHUB_API_TOKEN` for the gh-pages deployment
+- Deploys the `dist` directory to GitHub Pages
+
+<Note>
+  This deploy script is for GitHub Pages. For Netlify deployment, environment variables are configured in the Netlify dashboard.
+</Note>
+
+## Summary
+
+<CardGroup cols={2}>
+  <Card title="API_TOKEN" icon="key">
+    **Required** for Azure AI chat functionality  
+    Server-side only, configured in Netlify
+  </Card>
+  <Card title="VITE_GITHUB_API_TOKEN" icon="github">
+    **Optional** for GitHub data features  
+    Client-side, embedded in build
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Netlify Setup" icon="cloud" href="/deployment/netlify">
+    Complete deployment guide
+  </Card>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Get started with local development
+  </Card>
+</CardGroup>

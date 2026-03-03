@@ -1,0 +1,488 @@
+---
+title: GitHub Integration
+description: Display GitHub contribution history with an interactive contribution graph showing activity over the past year
+---
+
+# GitHub Integration
+
+The GitHub Integration feature displays your GitHub contribution activity through an interactive contribution graph, similar to the one shown on GitHub profiles. It provides a visual representation of coding activity over the past year.
+
+## Overview
+
+The contribution graph fetches data from GitHub's public API and displays it in a familiar heatmap format, showing contribution intensity through color gradients.
+
+### Key Features
+
+<Info>
+  - Real-time GitHub contribution data
+  - Interactive heatmap visualization
+  - Monthly labels and day-of-week indicators
+  - Hover tooltips showing exact contribution counts
+  - Click-through to GitHub activity pages
+  - Responsive design
+  - Loading and error states
+</Info>
+
+## Implementation
+
+The GitHub contribution graph is implemented in `src/components/github-contribution-graph.tsx` as a standalone React component.
+
+### Component Structure
+
+```tsx
+interface ContributionDay {
+  date: string;
+  count: number;
+  level: number; // 0-4 for different contribution levels
+}
+
+interface GitHubApiResponse {
+  totalContributions: number;
+  weeks: ContributionDay[][];
+}
+
+interface GitHubContributionGraphProps {
+  className?: string;
+}
+```
+
+**Location:** src/components/github-contribution-graph.tsx:3-16
+
+## Data Fetching
+
+### API Integration
+
+The component fetches contribution data from a third-party GitHub API:
+
+<Steps>
+  <Step title="API Request">
+    ```tsx
+    async function fetchContributions() {
+      try {
+        const username = "EClinick";
+
+        // Fetch from GitHub's public contribution API
+        const response = await fetch(
+          `https://github-contributions-api.jogruber.de/v4/${username}?y=last`
+        );
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch contributions');
+        }
+
+        const data = await response.json();
+        // Process data...
+      } catch (err) {
+        console.error('Error fetching GitHub contributions:', err);
+        setError(err instanceof Error ? err.message : 'Unknown error');
+        setLoading(false);
+      }
+    }
+    ```
+
+    **Location:** src/components/github-contribution-graph.tsx:27-77
+  </Step>
+
+  <Step title="Data Transformation">
+    The API response is transformed into a week-based structure:
+
+    ```tsx
+    const totalContributions = data.total.lastYear;
+    const transformedWeeks: ContributionDay[][] = [];
+    const contributions = data.contributions;
+
+    // Group contributions by week
+    let currentWeek: ContributionDay[] = [];
+    contributions.forEach((contribution: any, index: number) => {
+      const date = new Date(contribution.date);
+      const dayOfWeek = date.getDay(); // 0 (Sunday) to 6 (Saturday)
+
+      const count = contribution.count;
+      const level = count === 0 ? 0 : count < 3 ? 1 : count < 6 ? 2 : count < 10 ? 3 : 4;
+
+      currentWeek.push({
+        date: contribution.date,
+        count,
+        level
+      });
+
+      // When we hit Saturday or it's the last item, push the week
+      if (dayOfWeek === 6 || index === contributions.length - 1) {
+        if (currentWeek.length > 0) {
+          transformedWeeks.push([...currentWeek]);
+          currentWeek = [];
+        }
+      }
+    });
+
+    setContributions(totalContributions);
+    setWeeks(transformedWeeks);
+    setLoading(false);
+    ```
+
+    **Location:** src/components/github-contribution-graph.tsx:42-72
+  </Step>
+
+  <Step title="State Management">
+    ```tsx
+    const [contributions, setContributions] = useState<number>(0);
+    const [weeks, setWeeks] = useState<ContributionDay[][]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+      fetchContributions();
+    }, []);
+    ```
+
+    **Location:** src/components/github-contribution-graph.tsx:21-81
+  </Step>
+</Steps>
+
+<Note>
+  The component uses the `github-contributions-api.jogruber.de` service to fetch contribution data without requiring authentication. This makes it easy to display public GitHub activity.
+</Note>
+
+## Visualization
+
+### Contribution Levels
+
+Contributions are mapped to 5 levels (0-4) with corresponding colors:
+
+```tsx
+const getLevelColor = (level: number): string => {
+  switch (level) {
+    case 0: return 'bg-zinc-900';      // No contributions
+    case 1: return 'bg-green-900/40';  // 1-2 contributions
+    case 2: return 'bg-green-700/60';  // 3-5 contributions
+    case 3: return 'bg-green-600/80';  // 6-9 contributions
+    case 4: return 'bg-green-500';     // 10+ contributions
+    default: return 'bg-zinc-900';
+  }
+};
+```
+
+**Location:** src/components/github-contribution-graph.tsx:111-120
+
+<Tip>
+  The level calculation algorithm:
+  - 0 contributions = Level 0
+  - 1-2 contributions = Level 1
+  - 3-5 contributions = Level 2
+  - 6-9 contributions = Level 3
+  - 10+ contributions = Level 4
+</Tip>
+
+### Grid Layout
+
+The contribution graph is rendered as a grid of weeks and days:
+
+<Tabs>
+  <Tab title="Month Labels">
+    Month labels are dynamically generated based on contribution dates:
+
+    ```tsx
+    const getMonthLabels = () => {
+      if (weeks.length === 0) return [];
+
+      const labels: { month: string; weekIndex: number }[] = [];
+      let lastMonth = -1;
+
+      weeks.forEach((week, weekIndex) => {
+        if (week.length > 0) {
+          const date = new Date(week[0].date);
+          const month = date.getMonth();
+
+          if (month !== lastMonth) {
+            labels.push({
+              month: date.toLocaleDateString('en-US', { month: 'short' }),
+              weekIndex
+            });
+            lastMonth = month;
+          }
+        }
+      });
+
+      return labels;
+    };
+
+    {/* Month labels display */}
+    <div className="mb-2 pl-8 relative h-4">
+      {monthLabels.map(({ month, weekIndex }) => (
+        <div
+          key={`${month}-${weekIndex}`}
+          className="text-xs text-gray-400 absolute"
+          style={{ left: `${weekIndex * 16}px` }}
+        >
+          {month}
+        </div>
+      ))}
+    </div>
+    ```
+
+    **Location:** src/components/github-contribution-graph.tsx:84-164
+  </Tab>
+
+  <Tab title="Day Labels">
+    ```tsx
+    const days = ['Mon', 'Wed', 'Fri'];
+
+    {/* Day labels */}
+    <div className="flex flex-col justify-between pr-2 text-xs text-gray-400 h-[105px]">
+      {days.map((day) => (
+        <div key={day} className="h-[13px] flex items-center">{day}</div>
+      ))}
+    </div>
+    ```
+
+    **Location:** src/components/github-contribution-graph.tsx:109-171
+  </Tab>
+
+  <Tab title="Contribution Grid">
+    The main grid shows individual contribution days:
+
+    ```tsx
+    <div className="flex gap-[3px]">
+      {weeks.map((week, weekIndex) => (
+        <div key={weekIndex} className="flex flex-col gap-[3px]">
+          {week.map((day, dayIndex) => (
+            <div
+              key={`${weekIndex}-${dayIndex}`}
+              className={`w-[13px] h-[13px] rounded-sm ${getLevelColor(day.level)} hover:ring-1 hover:ring-white/50 transition-all cursor-pointer`}
+              title={`${day.count} contributions on ${day.date}`}
+              onClick={() => {
+                const formattedDate = day.date;
+                window.open(
+                  `https://github.com/EClinick?tab=overview&from=${formattedDate}&to=${formattedDate}`,
+                  '_blank'
+                );
+              }}
+            />
+          ))}
+        </div>
+      ))}
+    </div>
+    ```
+
+    **Location:** src/components/github-contribution-graph.tsx:175-191
+  </Tab>
+</Tabs>
+
+### Interactive Features
+
+Each contribution cell is interactive:
+
+<Steps>
+  <Step title="Hover Tooltips">
+    ```tsx
+    <div
+      className="hover:ring-1 hover:ring-white/50 transition-all cursor-pointer"
+      title={`${day.count} contributions on ${day.date}`}
+    />
+    ```
+
+    Native HTML tooltips show exact contribution counts and dates on hover.
+  </Step>
+
+  <Step title="Click-Through to GitHub">
+    ```tsx
+    onClick={() => {
+      const formattedDate = day.date;
+      window.open(
+        `https://github.com/EClinick?tab=overview&from=${formattedDate}&to=${formattedDate}`,
+        '_blank'
+      );
+    }}
+    ```
+
+    Clicking a cell opens the corresponding GitHub activity page.
+
+    **Location:** src/components/github-contribution-graph.tsx:183-186
+  </Step>
+</Steps>
+
+### Legend
+
+A legend shows the color scale:
+
+```tsx
+<div className="flex items-center justify-end gap-2 mt-4 text-xs text-gray-400">
+  <span>Less</span>
+  <div className="flex gap-1">
+    {[0, 1, 2, 3, 4].map((level) => (
+      <div
+        key={level}
+        className={`w-[13px] h-[13px] rounded-sm ${getLevelColor(level)}`}
+      />
+    ))}
+  </div>
+  <span>More</span>
+</div>
+```
+
+**Location:** src/components/github-contribution-graph.tsx:194-206
+
+## Loading and Error States
+
+The component handles loading and error states gracefully:
+
+<Tabs>
+  <Tab title="Loading State">
+    ```tsx
+    if (loading) {
+      return (
+        <div className="rounded-2xl p-6 shadow-2xl border border-gray-800">
+          <div className="flex items-center justify-center h-[200px]">
+            <div className="text-gray-400">Loading contributions...</div>
+          </div>
+        </div>
+      );
+    }
+    ```
+
+    **Location:** src/components/github-contribution-graph.tsx:122-129
+  </Tab>
+
+  <Tab title="Error State">
+    ```tsx
+    if (error) {
+      return (
+        <div className="rounded-2xl p-6 shadow-2xl border border-gray-800">
+          <div className="flex items-center justify-center h-[200px]">
+            <div className="text-gray-400">Unable to load GitHub contributions</div>
+          </div>
+        </div>
+      );
+    }
+    ```
+
+    **Location:** src/components/github-contribution-graph.tsx:132-139
+  </Tab>
+</Tabs>
+
+## Responsive Design
+
+The component includes horizontal scrolling on mobile devices:
+
+```tsx
+<div className="relative overflow-x-auto">
+  <div className="inline-block min-w-full">
+    {/* Graph content */}
+  </div>
+</div>
+```
+
+**Location:** src/components/github-contribution-graph.tsx:151-209
+
+<Note>
+  The graph maintains its layout on all screen sizes, with horizontal scrolling enabled for smaller viewports to ensure all data remains accessible.
+</Note>
+
+## Header Display
+
+The component shows total contributions prominently:
+
+```tsx
+<div className="flex items-center justify-between">
+  <h3 className="text-lg md:text-xl font-light text-white">
+    <span className="font-semibold">{contributions.toLocaleString()}</span> contributions in the last year
+  </h3>
+</div>
+```
+
+**Location:** src/components/github-contribution-graph.tsx:145-149
+
+## Usage Example
+
+```tsx
+import GitHubContributionGraph from './components/github-contribution-graph';
+
+function Portfolio() {
+  return (
+    <div className="space-y-8">
+      <h2>GitHub Activity</h2>
+      <GitHubContributionGraph className="w-full" />
+    </div>
+  );
+}
+```
+
+## Customization
+
+### Changing the GitHub Username
+
+Update the username in the component:
+
+```tsx
+const username = "YourGitHubUsername";
+```
+
+**Location:** src/components/github-contribution-graph.tsx:29
+
+### Adjusting Contribution Levels
+
+Modify the level calculation thresholds:
+
+```tsx
+const level = count === 0 ? 0 
+  : count < 5 ? 1      // Changed from 3
+  : count < 10 ? 2     // Changed from 6
+  : count < 20 ? 3     // Changed from 10
+  : 4;
+```
+
+### Custom Colors
+
+Change the color scheme by modifying the `getLevelColor` function:
+
+```tsx
+const getLevelColor = (level: number): string => {
+  switch (level) {
+    case 0: return 'bg-gray-900';
+    case 1: return 'bg-blue-900/40';
+    case 2: return 'bg-blue-700/60';
+    case 3: return 'bg-blue-600/80';
+    case 4: return 'bg-blue-500';
+    default: return 'bg-gray-900';
+  }
+};
+```
+
+## Best Practices
+
+<Note>
+  1. **API Reliability** - The third-party API may have rate limits; consider caching responses
+  2. **Error Handling** - Always show user-friendly error messages
+  3. **Loading States** - Provide clear feedback while data is loading
+  4. **Accessibility** - Ensure tooltips and interactive elements are keyboard accessible
+  5. **Performance** - Consider lazy loading the component if it's below the fold
+  6. **Privacy** - Only display public contribution data
+</Note>
+
+## API Reference
+
+### GitHubContributionGraph Props
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `className` | `string` | `""` | Additional CSS classes for the container |
+
+### Data API
+
+The component uses the [GitHub Contributions API](https://github-contributions-api.jogruber.de/v4/) which provides:
+
+- **Endpoint**: `GET /v4/{username}?y=last`
+- **Response**: JSON with contribution data for the past year
+- **Rate Limit**: Typically generous for public data
+- **Authentication**: Not required for public profiles
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Project Showcase" icon="rocket" href="/features/project-showcase">
+    Learn about the interactive project display
+  </Card>
+  <Card title="AI Chat Assistant" icon="message" href="/features/ai-chat-assistant">
+    Explore the AI-powered chat feature
+  </Card>
+</CardGroup>

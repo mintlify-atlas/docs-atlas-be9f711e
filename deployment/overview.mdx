@@ -1,0 +1,118 @@
+---
+title: Deployment Overview
+description: Learn about deploying your React + TypeScript portfolio to Netlify with serverless functions
+---
+
+This portfolio application is designed to be deployed on Netlify, taking advantage of modern serverless architecture and continuous deployment from GitHub.
+
+## Architecture
+
+The application uses a modern JAMstack architecture:
+
+- **Frontend**: React 18 with TypeScript, built with Vite
+- **Serverless Functions**: Netlify Functions for backend API operations
+- **AI Integration**: Azure AI models accessed through serverless functions
+- **Hosting**: Netlify with automatic deployments from GitHub
+
+## Deployment Flow
+
+<Steps>
+  <Step title="Code Push">
+    Push your code changes to the `main` branch on GitHub
+  </Step>
+  
+  <Step title="Automatic Build">
+    Netlify automatically detects the push and triggers a build using the configuration in `netlify.toml`
+  </Step>
+  
+  <Step title="Build Process">
+    The build command runs:
+    ```bash
+    npx convex deploy --cmd "npm run build"
+    ```
+    This compiles your React application and prepares serverless functions
+  </Step>
+  
+  <Step title="Deployment">
+    The built assets from the `dist` directory are deployed to Netlify's global CDN
+  </Step>
+  
+  <Step title="Functions Available">
+    Netlify Functions are deployed and available at `/.netlify/functions/[function-name]`
+  </Step>
+</Steps>
+
+## Key Features
+
+### Serverless Functions
+
+The portfolio uses Netlify Functions to handle backend operations:
+
+- **Chat API Proxy**: Located at `netlify/functions/chat.ts`
+- **Azure AI Integration**: Securely proxies requests to Azure AI models
+- **CORS Handling**: Built-in CORS configuration for API requests
+
+### Environment Variables
+
+Two critical environment variables are required:
+
+<CardGroup cols={2}>
+  <Card title="VITE_GITHUB_API_TOKEN" icon="github">
+    GitHub API token for accessing repository data
+  </Card>
+  <Card title="API_TOKEN" icon="key">
+    Azure AI API token for chat functionality
+  </Card>
+</CardGroup>
+
+<Note>
+  Environment variables prefixed with `VITE_` are exposed to the client-side code, while others remain server-side only.
+</Note>
+
+### Build Configuration
+
+The build process is configured in `netlify.toml`:
+
+```toml netlify.toml
+[build]
+  command = "npx convex deploy --cmd \"npm run build\""
+  publish = "dist"
+  functions = "netlify/functions"
+
+[build.environment]
+  NODE_VERSION = "20"
+```
+
+### SPA Routing
+
+The application uses client-side routing with React Router. Netlify is configured to redirect all routes to `index.html`:
+
+```toml
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Netlify Setup" icon="cloud" href="/deployment/netlify">
+    Step-by-step guide to deploying on Netlify
+  </Card>
+  <Card title="Environment Variables" icon="gears" href="/deployment/environment-variables">
+    Configure all required environment variables
+  </Card>
+</CardGroup>
+
+## Requirements
+
+- Node.js v20 or higher
+- pnpm package manager (v10.19.0)
+- GitHub account
+- Netlify account
+- Azure AI API access
+
+<Warning>
+  Make sure to configure environment variables before deploying, or the AI chat functionality will not work.
+</Warning>

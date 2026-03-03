@@ -1,0 +1,195 @@
+---
+title: Portfolio & Page Components
+description: Main portfolio page and about page components with layout and navigation
+---
+
+# Portfolio & Page Components
+
+The main page components that make up the portfolio website, including the home page and about page.
+
+## Portfolio Component
+
+The main landing page component showcasing the developer's introduction and featured work.
+
+### Import
+
+```tsx
+import Portfolio from './app/Portfolio';
+```
+
+### Usage
+
+```tsx
+function App() {
+  return <Portfolio />;
+}
+```
+
+### Features
+
+<ParamField path="Profile Section" type="component">
+  Hero section with profile image and introduction
+  
+  - Full-stack developer tagline
+  - Professional profile image (280x350px mobile, 500x600px desktop)
+  - Signature branding element (✱)
+  - "Simplicity for the Future" tagline
+</ParamField>
+
+<ParamField path="GitHub Contributions" type="component">
+  Interactive contribution graph showing development activity
+</ParamField>
+
+<ParamField path="Featured Projects" type="component">
+  Curated showcase of selected projects
+</ParamField>
+
+<ParamField path="Employment Timeline" type="component">
+  Professional experience displayed chronologically
+</ParamField>
+
+### State Management
+
+The Portfolio component manages mobile menu state:
+
+```tsx
+const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+```
+
+### Layout Structure
+
+- **Menu Component**: Responsive navigation with mobile toggle
+- **Main Content**: Grid layout (lg:grid-cols-2) with scroll animations
+- **Sections**: GitHub graph, projects, timeline, and footer
+
+### Animations
+
+Uses custom scroll animation components:
+
+- `ScrollSlideIn` - Slides content in from the side
+- `ScrollFadeIn` - Fades content in with optional delay
+
+### Source Location
+
+`src/app/Portfolio.tsx:11`
+
+---
+
+## About Component
+
+Detailed about page with personal information, skills, and tech stack.
+
+### Import
+
+```tsx
+import About from './app/About';
+```
+
+### Usage
+
+```tsx
+function App() {
+  return <About />;
+}
+```
+
+### Features
+
+<ParamField path="Bento Grid Layout" type="component">
+  Modern card-based layout showcasing different aspects:
+  
+  - **Profile Image**: Grayscale profile photo (400px min-height)
+  - **AKA Card**: Brief introduction and mission statement
+  - **Skills Card**: Core competencies with orange gradient
+  - **Time Card**: Timezone and location information
+  - **Projects Card**: Expandable project showcase
+  - **Stack Card**: Technology logo carousel
+</ParamField>
+
+### Tech Stack Logos
+
+Displays technology proficiencies with colored icons:
+
+```tsx
+const stackLogos = [
+  { name: "Figma", id: 1, img: SiFigma, color: "#F24E1E" },
+  { name: "Git", id: 2, img: SiGit, color: "#F24E1E" },
+  { name: "Discord", id: 3, img: SiDiscord, color: "#5865F2" },
+  { name: "GitHub", id: 4, img: SiGithub, color: "#181717" },
+  { name: "Supabase", id: 5, img: SiSupabase, color: "#3ECF8E" },
+  { name: "Postman", id: 6, img: SiPostman, color: "#FF6C37" },
+  { name: "React", id: 7, img: SiReact, color: "#61DAFB" },
+  { name: "Tailwind", id: 8, img: SiTailwindcss, color: "#38BDF8" },
+  { name: "Python", id: 9, img: SiPython, color: "#3776AB" },
+];
+```
+
+### State Management
+
+```tsx
+const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+```
+
+### Lifecycle Effects
+
+```tsx
+useEffect(() => {
+  // Scroll to top when component mounts
+  window.scrollTo(0, 0);
+}, []);
+```
+
+### Grid Components
+
+<ParamField path="BentoGrid" type="component">
+  Container component for the card layout
+</ParamField>
+
+<ParamField path="BentoGridItem" type="component">
+  Individual card component with customizable:
+  
+  - `className` - Tailwind classes for styling
+  - `header` - Optional header content
+  - `title` - Card title element
+  - `description` - Card body content
+</ParamField>
+
+### Dynamic Content
+
+<ParamField path="Local Time" type="computed">
+  ```tsx
+  new Date().toLocaleTimeString([], { 
+    hour: '2-digit', 
+    minute: '2-digit' 
+  })
+  ```
+</ParamField>
+
+<ParamField path="Timezone" type="computed">
+  ```tsx
+  Intl.DateTimeFormat().resolvedOptions().timeZone
+  ```
+</ParamField>
+
+### Source Location
+
+`src/app/About.tsx:26`
+
+---
+
+## Common Features
+
+Both components share:
+
+- Responsive menu with mobile toggle state
+- Dark theme (bg-black with white text)
+- Footer component
+- Scroll animations for enhanced UX
+- Container-based layout (max-width with responsive padding)
+
+## Dependencies
+
+- `react-icons/si` - Technology brand icons
+- `lucide-react` - UI icons
+- Custom UI components (BentoGrid, LogoCarousel, etc.)
+- Animation components (ScrollFadeIn, ScrollSlideIn)

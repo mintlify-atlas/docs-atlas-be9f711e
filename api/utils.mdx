@@ -1,0 +1,464 @@
+---
+title: Utility Functions
+description: Helper functions for blog operations, date formatting, and styling utilities
+---
+
+# Utility Functions
+
+Utility functions for blog management, date formatting, filtering, and CSS class manipulation.
+
+## Blog Utilities
+
+Functions for working with blog posts and content.
+
+### formatDate
+
+Formats an ISO date string into a human-readable format.
+
+```tsx
+import { formatDate } from '../lib/blogUtils';
+```
+
+<ParamField path="dateString" type="string" required>
+  ISO date string (e.g., "2024-01-15")
+</ParamField>
+
+**Returns:** `string` - Formatted date (e.g., "January 15, 2024")
+
+#### Usage
+
+```tsx
+const publishedDate = "2024-01-15";
+const formatted = formatDate(publishedDate);
+// Output: "January 15, 2024"
+```
+
+#### Implementation
+
+```tsx
+export function formatDate(dateString: string): string {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+}
+```
+
+**Source:** `src/lib/blogUtils.ts:4`
+
+---
+
+### estimateReadingTime
+
+Calculates estimated reading time based on word count.
+
+```tsx
+import { estimateReadingTime } from '../lib/blogUtils';
+```
+
+<ParamField path="content" type="string" required>
+  The full text content to analyze
+</ParamField>
+
+**Returns:** `number` - Reading time in minutes (minimum 1)
+
+#### Usage
+
+```tsx
+const blogContent = "Lorem ipsum dolor sit amet...";
+const readingTime = estimateReadingTime(blogContent);
+// Output: 5 (minutes)
+```
+
+#### Implementation
+
+```tsx
+export function estimateReadingTime(content: string): number {
+  const wordsPerMinute = 200;
+  const wordCount = content.split(/\s+/).length;
+  return Math.max(1, Math.ceil(wordCount / wordsPerMinute));
+}
+```
+
+**Source:** `src/lib/blogUtils.ts:14`
+
+---
+
+### searchPosts
+
+Searches blog posts by title, excerpt, category, or tags.
+
+```tsx
+import { searchPosts } from '../lib/blogUtils';
+import type { BlogPostMetadata } from '../types/blog';
+```
+
+<ParamField path="posts" type="BlogPostMetadata[]" required>
+  Array of blog post metadata to search
+</ParamField>
+
+<ParamField path="query" type="string" required>
+  Search query string (case-insensitive)
+</ParamField>
+
+**Returns:** `BlogPostMetadata[]` - Filtered posts matching the query
+
+#### Usage
+
+```tsx
+const allPosts = getAllBlogPosts();
+const results = searchPosts(allPosts, "React");
+// Returns posts containing "React" in title, excerpt, category, or tags
+```
+
+#### Implementation
+
+```tsx
+export function searchPosts(
+  posts: BlogPostMetadata[], 
+  query: string
+): BlogPostMetadata[] {
+  if (!query.trim()) return posts;
+  
+  const lowerQuery = query.toLowerCase();
+  return posts.filter(post => 
+    post.title.toLowerCase().includes(lowerQuery) ||
+    post.excerpt.toLowerCase().includes(lowerQuery) ||
+    (post.category && post.category.toLowerCase().includes(lowerQuery)) ||
+    (post.tags && post.tags.some(tag => tag.toLowerCase().includes(lowerQuery)))
+  );
+}
+```
+
+**Source:** `src/lib/blogUtils.ts:21`
+
+---
+
+### filterByCategory
+
+Filters blog posts by category.
+
+```tsx
+import { filterByCategory } from '../lib/blogUtils';
+```
+
+<ParamField path="posts" type="BlogPostMetadata[]" required>
+  Array of blog posts to filter
+</ParamField>
+
+<ParamField path="category" type="string" required>
+  Category name to filter by (use "All" to return all posts)
+</ParamField>
+
+**Returns:** `BlogPostMetadata[]` - Posts in the specified category
+
+#### Usage
+
+```tsx
+const allPosts = getAllBlogPosts();
+const techPosts = filterByCategory(allPosts, "Technology");
+```
+
+**Source:** `src/lib/blogUtils.ts:34`
+
+---
+
+### filterByTag
+
+Filters blog posts by tag.
+
+```tsx
+import { filterByTag } from '../lib/blogUtils';
+```
+
+<ParamField path="posts" type="BlogPostMetadata[]" required>
+  Array of blog posts to filter
+</ParamField>
+
+<ParamField path="tag" type="string" required>
+  Tag name to filter by (use "All" to return all posts)
+</ParamField>
+
+**Returns:** `BlogPostMetadata[]` - Posts containing the specified tag
+
+#### Usage
+
+```tsx
+const allPosts = getAllBlogPosts();
+const reactPosts = filterByTag(allPosts, "React");
+```
+
+**Source:** `src/lib/blogUtils.ts:40`
+
+---
+
+### getAllCategories
+
+Extracts all unique categories from blog posts.
+
+```tsx
+import { getAllCategories } from '../lib/blogUtils';
+```
+
+<ParamField path="posts" type="BlogPostMetadata[]" required>
+  Array of blog posts
+</ParamField>
+
+**Returns:** `string[]` - Sorted array of unique category names
+
+#### Usage
+
+```tsx
+const allPosts = getAllBlogPosts();
+const categories = getAllCategories(allPosts);
+// Output: ["AI", "Finance", "Technology"]
+```
+
+**Source:** `src/lib/blogUtils.ts:48`
+
+---
+
+### getAllTags
+
+Extracts all unique tags from blog posts.
+
+```tsx
+import { getAllTags } from '../lib/blogUtils';
+```
+
+<ParamField path="posts" type="BlogPostMetadata[]" required>
+  Array of blog posts
+</ParamField>
+
+**Returns:** `string[]` - Sorted array of unique tag names
+
+#### Usage
+
+```tsx
+const allPosts = getAllBlogPosts();
+const tags = getAllTags(allPosts);
+// Output: ["AI", "Machine Learning", "React", "TypeScript"]
+```
+
+**Source:** `src/lib/blogUtils.ts:59`
+
+---
+
+## Blog Data Functions
+
+Functions for loading blog content from markdown files.
+
+### getAllBlogPosts
+
+Retrieves all blog post metadata from markdown files.
+
+```tsx
+import { getAllBlogPosts } from '../lib/blog';
+```
+
+**Parameters:** None
+
+**Returns:** `BlogPostMetadata[]` - Array of all blog posts sorted by date (newest first)
+
+#### Usage
+
+```tsx
+const posts = getAllBlogPosts();
+console.log(posts.length); // Number of blog posts
+```
+
+#### How It Works
+
+1. Imports all `.md` files from `../blog/` directory using Vite's glob import
+2. Parses frontmatter from each markdown file
+3. Validates required fields (slug, title, date, excerpt)
+4. Calculates reading time automatically
+5. Sorts posts by date (newest first)
+
+**Source:** `src/lib/blog.ts:51`
+
+---
+
+### getBlogPost
+
+Retrieves a single blog post with full content by slug.
+
+```tsx
+import { getBlogPost } from '../lib/blog';
+```
+
+<ParamField path="slug" type="string" required>
+  URL slug of the blog post (e.g., "welcome-to-my-blog")
+</ParamField>
+
+**Returns:** `BlogPost | null` - Blog post with full content, or `null` if not found
+
+#### Usage
+
+```tsx
+const post = getBlogPost("my-first-post");
+if (post) {
+  console.log(post.title);
+  console.log(post.content); // Full markdown content
+}
+```
+
+**Source:** `src/lib/blog.ts:89`
+
+---
+
+### parseFrontmatter
+
+Internal function that extracts frontmatter and content from markdown.
+
+```tsx
+function parseFrontmatter(content: string): { 
+  frontmatter: Record<string, any>; 
+  body: string 
+}
+```
+
+<ParamField path="content" type="string" required>
+  Raw markdown content with YAML frontmatter
+</ParamField>
+
+**Returns:** Object with parsed frontmatter and body content
+
+#### Supported Frontmatter Types
+
+- **Strings**: `title: "My Post"`
+- **Booleans**: `featured: true`
+- **Arrays**: `tags: [React, TypeScript]`
+- **Dates**: `date: 2024-01-15`
+
+#### Example Markdown
+
+```markdown
+---
+slug: my-first-post
+title: My First Post
+date: 2024-01-15
+excerpt: This is my first blog post
+category: Technology
+tags: [React, TypeScript]
+featured: true
+---
+
+# Post Content
+
+This is the body of the post...
+```
+
+**Source:** `src/lib/blog.ts:12`
+
+---
+
+## Styling Utilities
+
+### cn (ClassNames)
+
+Combines and merges Tailwind CSS class names intelligently.
+
+```tsx
+import { cn } from '../lib/utils';
+```
+
+<ParamField path="...inputs" type="ClassValue[]" required>
+  Variable number of class values to merge (strings, objects, arrays)
+</ParamField>
+
+**Returns:** `string` - Merged class names with conflicts resolved
+
+#### Usage
+
+```tsx
+// Basic usage
+const classes = cn("px-4 py-2", "bg-blue-500");
+// Output: "px-4 py-2 bg-blue-500"
+
+// Conditional classes
+const buttonClass = cn(
+  "px-4 py-2 rounded",
+  isActive && "bg-blue-500",
+  !isActive && "bg-gray-300"
+);
+
+// Merging with conflicts (Tailwind merge)
+const merged = cn("p-4", "p-2"); // p-2 wins
+// Output: "p-2"
+```
+
+#### Implementation
+
+```tsx
+import { type ClassValue, clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
+```
+
+**Source:** `src/lib/utils.ts:4`
+
+---
+
+## Usage Patterns
+
+### Blog List with Filtering
+
+```tsx
+import { 
+  getAllBlogPosts, 
+  searchPosts, 
+  filterByCategory,
+  getAllCategories 
+} from '../lib/blog';
+
+function BlogList() {
+  const allPosts = getAllBlogPosts();
+  const [query, setQuery] = useState('');
+  const [category, setCategory] = useState('All');
+  
+  const categories = ['All', ...getAllCategories(allPosts)];
+  
+  let filteredPosts = allPosts;
+  if (query) {
+    filteredPosts = searchPosts(filteredPosts, query);
+  }
+  if (category !== 'All') {
+    filteredPosts = filterByCategory(filteredPosts, category);
+  }
+  
+  return (
+    <div>
+      {filteredPosts.map(post => (
+        <BlogCard key={post.id} post={post} />
+      ))}
+    </div>
+  );
+}
+```
+
+### Date Formatting in Components
+
+```tsx
+import { formatDate, estimateReadingTime } from '../lib/blogUtils';
+
+function BlogMeta({ post }) {
+  return (
+    <div>
+      <span>{formatDate(post.date)}</span>
+      <span>{estimateReadingTime(post.content)} min read</span>
+    </div>
+  );
+}
+```
+
+## Dependencies
+
+- `clsx` - Class name construction
+- `tailwind-merge` - Tailwind CSS class merging
+- Vite's `import.meta.glob` - Dynamic markdown imports

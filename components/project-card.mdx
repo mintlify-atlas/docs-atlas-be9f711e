@@ -1,0 +1,324 @@
+---
+title: 'ProjectCard Component'
+description: 'Interactive project showcase card with 3D tilt effects, tag system, and multiple action buttons'
+---
+
+# ProjectCard Component
+
+The ProjectCard component displays project information in an elegant, interactive card with glassmorphic styling and 3D tilt effects on hover.
+
+## Overview
+
+Located in `src/components/ProjectCard.tsx`, this component features:
+
+- 3D tilt effect on mouse movement
+- Glassmorphism design with shimmer effects
+- Project image with optional "Coming Soon" overlay
+- Customizable color-coded tags
+- Multiple action buttons (Live, LinkedIn, GitHub)
+- Optional disclaimer section
+- Dark/light mode support
+
+## Props
+
+<ParamField path="title" type="string" required>
+  The project title displayed prominently on the card.
+</ParamField>
+
+<ParamField path="description" type="string" required>
+  A brief description of the project. Supports multi-line text.
+</ParamField>
+
+<ParamField path="image" type="string" required>
+  URL or path to the project thumbnail image. Uses 16:10 aspect ratio.
+</ParamField>
+
+<ParamField path="tags" type="Tag[]" required>
+  Array of tag objects. Each tag has `text` and `color` ('blue' | 'green' | 'red' | 'yellow').
+</ParamField>
+
+<ParamField path="githubUrl" type="string" optional>
+  GitHub repository URL. Shows a GitHub button when provided.
+</ParamField>
+
+<ParamField path="liveUrl" type="string" optional>
+  Live demo URL. Shows a Visit button with external link icon when provided.
+</ParamField>
+
+<ParamField path="linkedinUrl" type="string" optional>
+  LinkedIn post or article URL. Shows a LinkedIn button when provided.
+</ParamField>
+
+<ParamField path="comingSoon" type="boolean" default="false">
+  When `true`, blurs the image and shows "Coming Soon" overlay.
+</ParamField>
+
+<ParamField path="disclaimer" type="string" optional>
+  Additional information or warnings displayed in an amber-colored box below the buttons.
+</ParamField>
+
+<ParamField path="isDarkMode" type="boolean" default="false">
+  Controls the card's color scheme.
+</ParamField>
+
+## Type Definitions
+
+```tsx
+interface Tag {
+  text: string;
+  color: 'blue' | 'green' | 'red' | 'yellow';
+}
+
+interface ProjectCardProps {
+  title: string;
+  description: string;
+  image: string;
+  tags: Tag[];
+  githubUrl?: string;
+  liveUrl?: string;
+  linkedinUrl?: string;
+  comingSoon?: boolean;
+  disclaimer?: string;
+  isDarkMode?: boolean;
+}
+```
+
+## Usage
+
+<CodeGroup>
+
+```tsx Basic Project
+import ProjectCard from './components/ProjectCard';
+
+function Projects() {
+  return (
+    <ProjectCard
+      title="Portfolio Website"
+      description="A modern portfolio built with React and TypeScript featuring AI chat integration."
+      image="/images/portfolio.png"
+      tags={[
+        { text: 'React', color: 'blue' },
+        { text: 'TypeScript', color: 'blue' },
+        { text: 'Tailwind', color: 'green' }
+      ]}
+      liveUrl="https://ethanclinick.com"
+      githubUrl="https://github.com/eclinick/portfolio"
+      isDarkMode={true}
+    />
+  );
+}
+```
+
+```tsx Coming Soon Project
+import ProjectCard from './components/ProjectCard';
+
+function Projects() {
+  return (
+    <ProjectCard
+      title="Secret Project"
+      description="An exciting new venture in AI-powered tools."
+      image="/images/placeholder.png"
+      tags={[
+        { text: 'AI/ML', color: 'yellow' },
+        { text: 'Python', color: 'green' }
+      ]}
+      comingSoon={true}
+      isDarkMode={true}
+    />
+  );
+}
+```
+
+```tsx With Disclaimer
+import ProjectCard from './components/ProjectCard';
+
+function Projects() {
+  return (
+    <ProjectCard
+      title="Client Project"
+      description="E-commerce platform with real-time inventory management."
+      image="/images/ecommerce.png"
+      tags={[
+        { text: 'Next.js', color: 'blue' },
+        { text: 'PostgreSQL', color: 'green' }
+      ]}
+      linkedinUrl="https://linkedin.com/posts/..."
+      disclaimer="Client project - repository is private"
+      isDarkMode={true}
+    />
+  );
+}
+```
+
+</CodeGroup>
+
+## Features
+
+### 3D Tilt Effect
+
+The card responds to mouse movement with a subtle 3D rotation:
+
+```tsx
+// From ProjectCard.tsx:37-51
+const handleMouseMove = (e: MouseEvent) => {
+  if (!cardRef.current) return;
+
+  const card = cardRef.current;
+  const rect = card.getBoundingClientRect();
+  const centerX = rect.left + rect.width / 2;
+  const centerY = rect.top + rect.height / 2;
+  
+  // Calculate rotation (-3 to 3 degrees)
+  const rotateY = ((e.clientX - centerX) / (rect.width / 2)) * 3;
+  const rotateX = -((e.clientY - centerY) / (rect.height / 2)) * 3;
+
+  setRotation({ x: rotateX, y: rotateY });
+};
+```
+
+Applied with CSS transform:
+
+```tsx
+// From ProjectCard.tsx:99-103
+style={{
+  transform: `perspective(1000px) rotateX(${rotation.x}deg) rotateY(${rotation.y}deg)`,
+  transformStyle: 'preserve-3d',
+  willChange: 'transform'
+}}
+```
+
+<Note>
+  The 3D effect resets when the mouse leaves the card area. The rotation is limited to ±3 degrees for a subtle, professional appearance.
+</Note>
+
+### Tag System
+
+Tags are color-coded for different technologies or categories:
+
+<Tabs>
+  <Tab title="Dark Mode Colors">
+    ```tsx
+    blue:   'bg-blue-500/20 text-blue-300'
+    green:  'bg-green-500/20 text-green-300'
+    red:    'bg-red-500/20 text-red-300'
+    yellow: 'bg-yellow-500/20 text-yellow-300'
+    ```
+  </Tab>
+  <Tab title="Light Mode Colors">
+    ```tsx
+    blue:   'bg-blue-500/30 text-blue-700'
+    green:  'bg-green-500/30 text-green-700'
+    red:    'bg-red-500/30 text-red-700'
+    yellow: 'bg-yellow-500/30 text-yellow-700'
+    ```
+  </Tab>
+</Tabs>
+
+Tag rendering:
+
+```tsx
+// From ProjectCard.tsx:141-149
+<div className="flex flex-wrap gap-2 mb-4">
+  {tags.map((tag) => (
+    <span
+      key={tag.text}
+      className={`glass-button px-4 py-2 rounded-full text-sm ${getTagStyles(tag.color)}`}
+    >
+      {tag.text}
+    </span>
+  ))}
+</div>
+```
+
+### Action Buttons
+
+Up to three types of action buttons can be displayed:
+
+<ParamField path="Visit" type="button">
+  Shown when `liveUrl` is provided. Opens the live project in a new tab.
+</ParamField>
+
+<ParamField path="LinkedIn" type="button">
+  Shown when `linkedinUrl` is provided. Opens the LinkedIn post in a new tab.
+</ParamField>
+
+<ParamField path="GitHub" type="button">
+  Shown when `githubUrl` is provided. Opens the repository in a new tab.
+</ParamField>
+
+All buttons include `rel="noopener noreferrer"` for security.
+
+### Coming Soon Overlay
+
+When `comingSoon={true}`:
+
+```tsx
+// From ProjectCard.tsx:111-132
+<img
+  src={image}
+  alt={title}
+  className={`w-full h-full object-contain ${comingSoon ? 'blur-[2px]' : ''}`}
+/>
+{comingSoon && (
+  <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+    <span className="glass-button px-6 py-2 rounded-xl text-lg font-medium">
+      Coming Soon
+    </span>
+  </div>
+)}
+```
+
+### Disclaimer Box
+
+Optional amber-colored disclaimer section:
+
+```tsx
+// From ProjectCard.tsx:198-208
+{disclaimer && (
+  <div className="mt-4 glass-card p-3 rounded-xl border backdrop-blur-xl 
+    border-amber-500/40 bg-amber-900/20">
+    <p className="text-sm text-amber-200">
+      {disclaimer}
+    </p>
+  </div>
+)}
+```
+
+## Glassmorphism Effects
+
+The card includes layered glass effects:
+
+1. **Glass shimmer**: Animated overlay for visual depth
+2. **Backdrop blur**: Transparent backgrounds with blur
+3. **Z-axis layering**: Elements positioned at different depths using `translateZ()`
+
+```tsx
+// From ProjectCard.tsx:106
+<div className="absolute inset-0 glass-shimmer opacity-30 pointer-events-none"></div>
+```
+
+## Styling Requirements
+
+<Warning>
+  This component requires custom CSS classes defined in your global styles:
+  - `glass-card`: Base glass container styles
+  - `glass-shimmer`: Shimmer animation effect
+  - `glass-button`: Glass button styling
+  
+  Ensure these are defined in your Tailwind config or CSS file.
+</Warning>
+
+## Customization Tips
+
+1. **Adjust tilt sensitivity**: Change the multiplier in `ProjectCard.tsx:47-48` (currently `* 3`)
+2. **Add more tag colors**: Extend the `Tag['color']` type and update `getTagStyles()`
+3. **Change aspect ratio**: Modify `aspect-[16/10]` in `ProjectCard.tsx:108`
+4. **Update button order**: Rearrange the conditional button renders in `ProjectCard.tsx:151-197`
+
+## Dependencies
+
+```json
+{
+  "lucide-react": "^0.x"
+}
+```

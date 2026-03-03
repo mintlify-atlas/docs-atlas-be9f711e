@@ -1,0 +1,309 @@
+---
+title: 'ChatBox Component'
+description: 'AI-powered chat interface with markdown support, blog context integration, and fullscreen mode'
+---
+
+# ChatBox Component
+
+The ChatBox component is an intelligent chat interface that connects to an AI backend, supports markdown rendering, and can provide context-aware responses about blog posts.
+
+## Overview
+
+Located in `src/components/ChatBox.tsx`, this component provides:
+
+- AI-powered chat using OpenAI GPT-4o-mini
+- Markdown rendering with syntax highlighting
+- Blog context integration for post summaries
+- Fullscreen mode for extended conversations
+- Auto-scrolling message history
+- Clear chat functionality
+- Loading states and error handling
+
+## Props
+
+<ParamField path="isOpen" type="boolean" required>
+  Controls the visibility of the chat interface. When `false`, the component returns `null`.
+</ParamField>
+
+<ParamField path="onClose" type="() => void" required>
+  Callback function triggered when the close button is clicked.
+</ParamField>
+
+<ParamField path="isDarkMode" type="boolean" default="true">
+  Controls the chat interface color scheme. The component is optimized for dark mode.
+</ParamField>
+
+<ParamField path="initialMessage" type="string" optional>
+  Message to send automatically when opening the chat. Used with `blogContext` to request summaries.
+</ParamField>
+
+<ParamField path="blogContext" type="BlogContext" optional>
+  Blog post data for context-aware responses. Includes `title`, `excerpt`, and `content` fields.
+</ParamField>
+
+## Type Definitions
+
+The component uses these TypeScript interfaces:
+
+```tsx
+interface Message {
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+}
+
+interface BlogContext {
+  title: string;
+  excerpt: string;
+  content: string;
+}
+
+interface ChatBoxProps {
+  isOpen: boolean;
+  onClose: () => void;
+  isDarkMode?: boolean;
+  initialMessage?: string;
+  blogContext?: BlogContext;
+}
+```
+
+## Usage
+
+<CodeGroup>
+
+```tsx Basic Chat
+import ChatBox from './components/ChatBox';
+
+function App() {
+  const [isChatOpen, setIsChatOpen] = useState(false);
+
+  return (
+    <ChatBox
+      isOpen={isChatOpen}
+      onClose={() => setIsChatOpen(false)}
+      isDarkMode={true}
+    />
+  );
+}
+```
+
+```tsx With Blog Context
+import ChatBox from './components/ChatBox';
+
+function BlogPost({ post }) {
+  const [isChatOpen, setIsChatOpen] = useState(false);
+
+  const handleSummaryRequest = () => {
+    setIsChatOpen(true);
+  };
+
+  return (
+    <>
+      <button onClick={handleSummaryRequest}>
+        Get AI Summary
+      </button>
+      
+      <ChatBox
+        isOpen={isChatOpen}
+        onClose={() => setIsChatOpen(false)}
+        isDarkMode={true}
+        initialMessage="Summarize this blog post for me"
+        blogContext={{
+          title: post.title,
+          excerpt: post.excerpt,
+          content: post.content
+        }}
+      />
+    </>
+  );
+}
+```
+
+</CodeGroup>
+
+## Features
+
+### AI Backend Integration
+
+The component connects to a Netlify serverless function:
+
+```tsx
+// From ChatBox.tsx:9-11
+const API_URL = process.env.NODE_ENV === 'development' 
+  ? '/.netlify/functions/chat'
+  : 'https://ethanclinick.netlify.app/.netlify/functions/chat';
+```
+
+Requests are sent with these parameters:
+
+```tsx
+// From ChatBox.tsx:114-126
+body: JSON.stringify({
+  messages: [
+    {
+      role: 'system',
+      content: createSystemPromptWithBlogContext(activeContext)
+    },
+    ...messages,
+    userMessage
+  ],
+  temperature: 0.7,
+  top_p: 0.9,
+  max_tokens: 4000,
+  model: "gpt-4o-mini"
+})
+```
+
+### Markdown Rendering
+
+Messages from the AI are rendered with full markdown support using `react-markdown`:
+
+<Tabs>
+  <Tab title="Supported Elements">
+    - **Headings**: H1, H2, H3 with custom styling
+    - **Lists**: Ordered and unordered with spacing
+    - **Code**: Inline code and code blocks
+    - **Links**: Auto-open in new tab with security
+    - **Blockquotes**: With border styling
+    - **Strong/Bold**: Enhanced visibility
+  </Tab>
+  <Tab title="Code Example">
+    ```tsx
+    // From ChatBox.tsx:181-233
+    <ReactMarkdown
+      components={{
+        p: ({children}) => (
+          <p className="mb-4 last:mb-0 text-sm leading-relaxed text-gray-200">
+            {children}
+          </p>
+        ),
+        code: ({inline, className, children}) => {
+          if (inline) {
+            return <code className="bg-gray-800 text-orange-400 px-1.5 py-0.5 rounded text-sm font-mono">{children}</code>;
+          }
+          return (
+            <div className="my-4">
+              <pre className="bg-gray-900 border border-gray-800 p-4 rounded-lg overflow-x-auto">
+                <code className={`${className} text-sm font-mono`}>{children}</code>
+              </pre>
+            </div>
+          );
+        },
+        // ... more components
+      }}
+    >
+      {formattedContent}
+    </ReactMarkdown>
+    ```
+  </Tab>
+</Tabs>
+
+### Message Formatting
+
+AI responses are automatically formatted for better readability:
+
+```tsx
+// From ChatBox.tsx:14-31
+const formatAIResponse = (text: string): string => {
+  // Add double line breaks between sections
+  text = text.replace(/\n(?=[A-Z])/g, '\n\n');
+  
+  // Add spacing after punctuation if missing
+  text = text.replace(/([.!?])([A-Z])/g, '$1\n\n$2');
+  
+  // Ensure proper spacing around lists
+  text = text.replace(/([.!?])\n([•\-*])/g, '$1\n\n$2');
+  
+  // Add spacing around code blocks
+  text = text.replace(/```/g, '\n```\n');
+  
+  return text.trim();
+};
+```
+
+### Fullscreen Mode
+
+Toggle between windowed and fullscreen layouts:
+
+```tsx
+// From ChatBox.tsx:254-256
+const toggleFullscreen = () => {
+  setIsFullscreen(!isFullscreen);
+};
+```
+
+<Note>
+  Fullscreen mode is only available on desktop (hidden on mobile via `hidden md:block`).
+</Note>
+
+### Blog Context System
+
+When a blog context is provided, the system prompt is enhanced:
+
+```tsx
+// From ChatBox.tsx:73-91
+const createSystemPromptWithBlogContext = (context?: BlogContext) => {
+  const basePrompt = createEnhancedSystemPrompt();
+  
+  if (context) {
+    return `${basePrompt}
+
+You are also helping the user understand a blog post. Here is the blog context:
+
+Blog Title: ${context.title}
+Blog Excerpt: ${context.excerpt}
+
+Blog Content:
+${context.content}
+
+When asked to summarize or discuss this blog, provide helpful insights...`;
+  }
+  
+  return basePrompt;
+};
+```
+
+### State Management
+
+Internal state tracked by the component:
+
+```tsx
+// From ChatBox.tsx:34-40
+const [messages, setMessages] = useState<Message[]>([]);
+const [isLoading, setIsLoading] = useState(false);
+const [error, setError] = useState<string | null>(null);
+const [isFullscreen, setIsFullscreen] = useState(false);
+const [currentBlogContext, setCurrentBlogContext] = useState<BlogContext | undefined>(undefined);
+const messagesEndRef = useRef<HTMLDivElement>(null);
+const hasProcessedInitialMessage = useRef<string | null>(null);
+```
+
+## API Configuration
+
+<Warning>
+  The component expects a serverless function at `/.netlify/functions/chat` that accepts OpenAI-compatible request format. Ensure your backend is configured with the OpenAI API key.
+</Warning>
+
+## Styling
+
+The ChatBox uses a dark, modern aesthetic:
+
+- **Container**: Fixed positioning with responsive sizing
+- **Background**: Pure black (`bg-black`) with glass borders
+- **Messages**: User messages in gray bubbles, AI messages as full-width text
+- **Input**: Custom `AIInput` component (see `src/components/ui/ai-input.tsx`)
+
+## Customization Tips
+
+1. **Change AI model**: Update the `model` parameter in `ChatBox.tsx:125`
+2. **Adjust response length**: Modify `max_tokens` in `ChatBox.tsx:124`
+3. **Update greeting message**: Edit the default message in `ChatBox.tsx:54-56`
+4. **Customize markdown styles**: Modify the ReactMarkdown components in `ChatBox.tsx:181-233`
+
+## Dependencies
+
+```json
+{
+  "react-markdown": "^8.x",
+  "lucide-react": "^0.x"
+}
+```

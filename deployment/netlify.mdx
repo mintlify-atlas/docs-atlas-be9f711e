@@ -1,0 +1,296 @@
+---
+title: Netlify Deployment Guide
+description: Complete step-by-step guide to deploy your portfolio on Netlify with serverless functions
+---
+
+This guide walks you through deploying your React + TypeScript portfolio to Netlify, including serverless functions and environment configuration.
+
+## Prerequisites
+
+Before you begin, ensure you have:
+
+- A GitHub account with your repository
+- A Netlify account (sign up at [netlify.com](https://netlify.com))
+- Azure AI API token
+- GitHub API token (optional, for repository data)
+
+## Initial Setup
+
+<Steps>
+  <Step title="Create Netlify Account">
+    1. Go to [netlify.com](https://netlify.com)
+    2. Click "Sign up" and choose "Sign up with GitHub"
+    3. Authorize Netlify to access your GitHub account
+  </Step>
+  
+  <Step title="Import Your Repository">
+    1. From your Netlify dashboard, click "Add new site"
+    2. Select "Import an existing project"
+    3. Choose "Deploy with GitHub"
+    4. Select your portfolio repository from the list
+  </Step>
+  
+  <Step title="Configure Build Settings">
+    Netlify should auto-detect your settings from `netlify.toml`, but verify:
+    
+    - **Build command**: `npx convex deploy --cmd "npm run build"`
+    - **Publish directory**: `dist`
+    - **Functions directory**: `netlify/functions`
+    - **Node version**: `20`
+  </Step>
+  
+  <Step title="Set Environment Variables">
+    Before deploying, configure your environment variables (see below)
+  </Step>
+  
+  <Step title="Deploy">
+    Click "Deploy site" to trigger your first deployment
+  </Step>
+</Steps>
+
+## Environment Variables Configuration
+
+<Steps>
+  <Step title="Navigate to Environment Settings">
+    In your Netlify site dashboard:
+    1. Click on "Site settings"
+    2. Navigate to "Environment variables" in the left sidebar
+  </Step>
+  
+  <Step title="Add Required Variables">
+    Add the following environment variables:
+    
+    <CodeGroup>
+    ```bash API_TOKEN
+    API_TOKEN=your_azure_ai_api_token_here
+    ```
+    
+    ```bash VITE_GITHUB_API_TOKEN
+    VITE_GITHUB_API_TOKEN=your_github_token_here
+    ```
+    </CodeGroup>
+  </Step>
+  
+  <Step title="Choose Deployment Contexts">
+    For each variable, select which contexts should have access:
+    - **Production**: Required
+    - **Deploy Previews**: Recommended
+    - **Branch deploys**: Optional
+  </Step>
+</Steps>
+
+<Warning>
+  Never commit API tokens to your repository. Always configure them as environment variables in Netlify.
+</Warning>
+
+## Netlify Configuration File
+
+Your `netlify.toml` file should be in the root of your repository:
+
+```toml netlify.toml
+[build]
+  command = "npx convex deploy --cmd \"npm run build\""
+  publish = "dist"
+  functions = "netlify/functions"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[[headers]]
+  for = "/*"
+    [headers.values]
+    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Methods = "GET, POST, OPTIONS"
+    Access-Control-Allow-Headers = "Content-Type, Authorization"
+```
+
+### Configuration Breakdown
+
+- **build.command**: Runs Convex deployment and Vite build
+- **build.publish**: Output directory for built assets
+- **build.functions**: Location of serverless functions
+- **redirects**: SPA routing support - redirects all routes to index.html
+- **headers**: CORS configuration for API requests
+
+## Local Testing
+
+Test your site locally before deploying:
+
+<Steps>
+  <Step title="Install Netlify CLI">
+    ```bash
+    pnpm add -g netlify-cli
+    ```
+  </Step>
+  
+  <Step title="Login to Netlify">
+    ```bash
+    netlify login
+    ```
+    This opens a browser window to authenticate
+  </Step>
+  
+  <Step title="Link Your Site">
+    ```bash
+    netlify link
+    ```
+    Select your site from the list or enter the site ID
+  </Step>
+  
+  <Step title="Test Locally">
+    ```bash
+    netlify dev
+    ```
+    This runs your site with Netlify Functions locally at `http://localhost:8888`
+  </Step>
+</Steps>
+
+<Note>
+  The `netlify dev` command automatically injects environment variables from your Netlify site, so you don't need a `.env` file locally.
+</Note>
+
+## Manual Deployment
+
+You can also deploy manually using the Netlify CLI:
+
+<CodeGroup>
+```bash Draft Deploy
+# Build your project
+pnpm run build
+
+# Deploy to a draft URL
+netlify deploy
+```
+
+```bash Production Deploy
+# Build your project
+pnpm run build
+
+# Deploy to production
+netlify deploy --prod
+```
+</CodeGroup>
+
+## Automatic Deployments
+
+By default, Netlify automatically deploys when you push to your repository:
+
+- **Production deploys**: Triggered on push to `main` branch
+- **Deploy previews**: Triggered on pull requests
+- **Branch deploys**: Optional, can be configured for specific branches
+
+### Configure Deploy Contexts
+
+1. Go to **Site settings** > **Build & deploy** > **Continuous deployment**
+2. Under "Deploy contexts", configure:
+   - **Production branch**: `main`
+   - **Branch deploys**: All branches or specific branches
+   - **Deploy previews**: Automatically build deploy previews for all pull requests
+
+## Monitoring and Debugging
+
+### View Build Logs
+
+1. Go to **Deploys** in your site dashboard
+2. Click on any deployment to view detailed logs
+3. Look for errors in the build output
+
+### Function Logs
+
+1. Go to **Functions** in your site dashboard
+2. Click on a function (e.g., `chat`)
+3. View real-time logs and invocation history
+
+### Common Build Issues
+
+<AccordionGroup>
+  <Accordion title="Build command failed">
+    - Verify `netlify.toml` is in the root directory
+    - Check that all dependencies are listed in `package.json`
+    - Ensure the build command works locally: `pnpm run build`
+  </Accordion>
+  
+  <Accordion title="Function errors">
+    - Check environment variables are configured correctly
+    - View function logs in Netlify dashboard
+    - Test functions locally using `netlify dev`
+    - Verify the function path: `netlify/functions/chat.ts`
+  </Accordion>
+  
+  <Accordion title="404 errors on routes">
+    - Ensure the redirect rule is in `netlify.toml`:
+    ```toml
+    [[redirects]]
+      from = "/*"
+      to = "/index.html"
+      status = 200
+    ```
+  </Accordion>
+  
+  <Accordion title="CORS errors">
+    - Verify CORS headers in `netlify.toml`
+    - Check function CORS configuration in `netlify/functions/chat.ts`
+    - Test API endpoints using browser DevTools or Postman
+  </Accordion>
+</AccordionGroup>
+
+## Performance Optimization
+
+### Build Plugin Recommendations
+
+1. **netlify-plugin-cache**: Cache dependencies between builds
+2. **@netlify/plugin-lighthouse**: Run Lighthouse checks on every deploy
+
+Install via Netlify UI: **Integrations** > **Build plugins**
+
+### Asset Optimization
+
+Vite automatically optimizes your assets during build:
+
+- JavaScript minification
+- CSS minification
+- Image optimization (for imported images)
+- Code splitting
+- Tree shaking
+
+<Note>
+  Your site is automatically deployed to Netlify's global CDN for fast access worldwide.
+</Note>
+
+## Custom Domain
+
+To add a custom domain:
+
+<Steps>
+  <Step title="Add Domain">
+    1. Go to **Domain settings**
+    2. Click "Add custom domain"
+    3. Enter your domain name
+  </Step>
+  
+  <Step title="Configure DNS">
+    Follow Netlify's instructions to:
+    - Add DNS records at your domain registrar, OR
+    - Use Netlify DNS for easier management
+  </Step>
+  
+  <Step title="Enable HTTPS">
+    Netlify automatically provisions an SSL certificate via Let's Encrypt
+  </Step>
+</Steps>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Environment Variables" icon="gears" href="/deployment/environment-variables">
+    Detailed guide to all environment variables
+  </Card>
+  <Card title="Serverless Functions" icon="code" href="/deployment/serverless-functions">
+    Configure Netlify Functions
+  </Card>
+</CardGroup>

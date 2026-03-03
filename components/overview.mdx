@@ -1,0 +1,73 @@
+---
+title: 'Components Overview'
+description: 'Explore the reusable UI components that power the Personal Portfolio website'
+---
+
+# Components Overview
+
+The Personal Portfolio project is built with a collection of modular, reusable React + TypeScript components. Each component is designed with glassmorphism aesthetics, dark mode support, and responsive behavior.
+
+## Available Components
+
+<CardGroup cols={2}>
+  <Card title="Navbar" icon="bars" href="/components/navbar">
+    Responsive navigation bar with mobile menu, social links, and theme toggle
+  </Card>
+  <Card title="ChatBox" icon="message-square" href="/components/chatbox">
+    AI-powered chat assistant with markdown support and blog context integration
+  </Card>
+  <Card title="ProjectCard" icon="rectangle-terminal" href="/components/project-card">
+    Interactive project showcase cards with 3D tilt effects and tag system
+  </Card>
+  <Card title="Footer" icon="grip-horizontal" href="/components/footer">
+    Site footer with social links and contact information
+  </Card>
+</CardGroup>
+
+## Design Philosophy
+
+All components in this portfolio follow these key principles:
+
+- **Glassmorphism**: Backdrop blur effects with transparent backgrounds
+- **Dark Mode First**: Built with dark mode as the primary theme
+- **Responsive**: Mobile-first design that adapts to all screen sizes
+- **Type Safety**: Fully typed with TypeScript interfaces
+- **Accessibility**: Semantic HTML and ARIA labels where needed
+
+## Component Structure
+
+Components are located in `src/components/` and follow this structure:
+
+```
+src/components/
+├── Navbar.tsx          # Main navigation
+├── ChatBox.tsx         # AI chat interface
+├── ProjectCard.tsx     # Project showcase card
+├── Footer.tsx          # Site footer
+└── ui/                 # Shared UI components
+    └── ai-input.tsx    # Custom AI input field
+```
+
+## Common Props
+
+Many components share common props for consistency:
+
+<ParamField path="isDarkMode" type="boolean" default="false">
+  Controls the component's color scheme. When `true`, applies dark mode styling.
+</ParamField>
+
+## Getting Started
+
+To use any component in your application:
+
+1. Import the component from `src/components/`
+2. Pass the required props (see individual component docs)
+3. Customize with optional props as needed
+
+<Note>
+  All components are designed to work together seamlessly. The `isDarkMode` prop should be managed at the application level and passed down to maintain consistency.
+</Note>
+
+## Next Steps
+
+Explore the documentation for each component to learn about their specific props, usage patterns, and customization options.

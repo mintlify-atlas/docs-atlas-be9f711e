@@ -1,0 +1,180 @@
+---
+title: 'Navbar Component'
+description: 'Fixed navigation bar with responsive mobile menu, social links, and dark mode toggle'
+---
+
+# Navbar Component
+
+The Navbar component provides a glassmorphic, fixed-position navigation bar with responsive behavior, social media links, and theme switching capabilities.
+
+## Overview
+
+Located in `src/components/Navbar.tsx`, this component features:
+
+- Fixed positioning with glassmorphism styling
+- Responsive mobile menu with smooth transitions
+- Integrated dark/light mode toggle
+- Social media links (GitHub, LinkedIn, Email)
+- Animated "Chat" button with bounce effect
+- Smooth scroll navigation
+
+## Props
+
+<ParamField path="onChatClick" type="() => void" required>
+  Callback function triggered when the Chat button is clicked. Use this to open the ChatBox component.
+</ParamField>
+
+<ParamField path="isDarkMode" type="boolean" required>
+  Controls the navbar's color scheme. Pass `true` for dark mode styling.
+</ParamField>
+
+<ParamField path="onToggleDarkMode" type="() => void" required>
+  Callback function for the dark/light mode toggle button. Should update the app's theme state.
+</ParamField>
+
+## Usage
+
+<CodeGroup>
+
+```tsx Basic Usage
+import Navbar from './components/Navbar';
+
+function App() {
+  const [isDarkMode, setIsDarkMode] = useState(true);
+  const [isChatOpen, setIsChatOpen] = useState(false);
+
+  return (
+    <Navbar
+      onChatClick={() => setIsChatOpen(true)}
+      isDarkMode={isDarkMode}
+      onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}
+    />
+  );
+}
+```
+
+```tsx With State Management
+import Navbar from './components/Navbar';
+import { useTheme } from './hooks/useTheme';
+import { useChatStore } from './store/chatStore';
+
+function App() {
+  const { isDarkMode, toggleTheme } = useTheme();
+  const { openChat } = useChatStore();
+
+  return (
+    <Navbar
+      onChatClick={openChat}
+      isDarkMode={isDarkMode}
+      onToggleDarkMode={toggleTheme}
+    />
+  );
+}
+```
+
+</CodeGroup>
+
+## Features
+
+### Navigation Links
+
+The navbar includes smooth-scroll anchor links to main sections:
+
+- Home (`#home`)
+- About (`#about`)
+- Projects (`#projects`)
+- Contact (`#contact`)
+
+### Chat Button Animation
+
+The Chat button features a special animation effect:
+
+```tsx
+// From Navbar.tsx:50-64
+<button
+  onClick={handleChatClick}
+  className={`chat-button-animated ${chatClicked ? 'chat-clicked' : ''} 
+    flex items-center justify-center px-6 py-2 rounded-full 
+    transition-all duration-300 transform hover:scale-110 
+    ${!chatClicked ? 'animate-chat-bounce-slow' : ''}`}
+>
+  <span className="font-semibold bg-gradient-to-r bg-clip-text text-transparent 
+    from-blue-400 via-purple-400 to-pink-400">
+    Chat
+  </span>
+</button>
+```
+
+<Note>
+  The Chat button has a continuous bounce animation (`animate-chat-bounce-slow`) that stops after the first click, preventing distraction for returning users.
+</Note>
+
+### Mobile Responsiveness
+
+The navbar automatically adapts for mobile screens:
+
+- Desktop: Horizontal layout with all links visible
+- Mobile: Hamburger menu with slide-down menu panel
+- Social links appear in both desktop (top bar) and mobile (menu footer)
+
+### Social Links
+
+Hardcoded social media links (update in `Navbar.tsx:72-89`):
+
+<CodeGroup>
+
+```tsx Social Links
+<a href="https://github.com/eclinick" className="...">
+  <Github size={18} />
+</a>
+<a href="https://linkedin.com/in/ethanclinick" className="...">
+  <Linkedin size={18} />
+</a>
+<a href="mailto:clinicke@oregonstate.edu" className="...">
+  <Mail size={18} />
+</a>
+```
+
+</CodeGroup>
+
+## Styling
+
+The navbar uses dynamic Tailwind classes based on the `isDarkMode` prop:
+
+<Tabs>
+  <Tab title="Dark Mode">
+    ```tsx
+    bg-gray-900/80 border-gray-700/50
+    text-gray-300 hover:text-white hover:bg-white/10
+    ```
+  </Tab>
+  <Tab title="Light Mode">
+    ```tsx
+    bg-white/80 border-white/40
+    text-slate-600 hover:text-slate-800 hover:bg-slate-800/10
+    ```
+  </Tab>
+</Tabs>
+
+## Component State
+
+Internal state management:
+
+```tsx
+// From Navbar.tsx:11-12
+const [isOpen, setIsOpen] = React.useState(false);      // Mobile menu
+const [chatClicked, setChatClicked] = React.useState(false); // Chat animation
+```
+
+## Customization
+
+To customize the navbar:
+
+1. **Update social links**: Edit URLs in `Navbar.tsx:72-89`
+2. **Change logo**: Modify the "EC" text in `Navbar.tsx:30-32`
+3. **Add/remove navigation items**: Update links in `Navbar.tsx:37-48`
+4. **Adjust styling**: Modify Tailwind classes in the component
+
+<Warning>
+  The navbar is fixed with `fixed top-4 left-4 right-4 z-50`, so ensure your page content has adequate top padding to prevent overlap.
+</Warning>

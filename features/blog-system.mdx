@@ -1,0 +1,484 @@
+---
+title: Blog System
+description: Comprehensive guide to the blog system with search, filtering, categories, tags, and AI-powered summarization
+---
+
+# Blog System
+
+The portfolio features a full-featured blog system with advanced search and filtering capabilities, category and tag organization, and AI-powered content summarization.
+
+## Overview
+
+The blog system consists of two main components:
+- **BlogList** - Main blog index with search and filtering
+- **BlogPost** - Individual post viewer with AI summarization
+
+### Key Features
+
+<Info>
+  - Full-text search across titles, excerpts, and content
+  - Category and tag filtering
+  - Featured posts showcase
+  - Reading time calculation
+  - View count tracking
+  - AI-powered post summarization
+  - Markdown rendering with syntax highlighting
+  - Responsive design
+</Info>
+
+## Blog List Component
+
+The blog list provides a searchable, filterable index of all blog posts.
+
+### Search Functionality
+
+<Steps>
+  <Step title="Search State">
+    Search is managed through React state with real-time filtering:
+
+    ```tsx
+    const [searchQuery, setSearchQuery] = useState('');
+    const [selectedCategory, setSelectedCategory] = useState<string>('All');
+    const [selectedTag, setSelectedTag] = useState<string>('All');
+    ```
+
+    **Location:** src/app/BlogList.tsx:13-15
+  </Step>
+
+  <Step title="Search UI">
+    A search bar with icon and focus states:
+
+    ```tsx
+    <div className="relative">
+      <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+      <input
+        type="text"
+        placeholder="Search blog posts..."
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        className="w-full pl-12 pr-4 py-3 rounded-xl bg-black/40 backdrop-blur-sm border border-white/10 hover:border-white/20 focus:border-orange-500/50"
+      />
+    </div>
+    ```
+
+    **Location:** src/app/BlogList.tsx:82-98
+  </Step>
+
+  <Step title="Search Implementation">
+    The search uses utility functions from `blogUtils`:
+
+    ```tsx
+    const filteredPosts = useMemo(() => {
+      let posts = allPosts;
+
+      // Apply search
+      if (searchQuery) {
+        posts = searchPosts(posts, searchQuery);
+      }
+
+      // Apply category filter
+      if (selectedCategory !== 'All') {
+        posts = filterByCategory(posts, selectedCategory);
+      }
+
+      // Apply tag filter
+      if (selectedTag !== 'All') {
+        posts = filterByTag(posts, selectedTag);
+      }
+
+      return posts;
+    }, [allPosts, searchQuery, selectedCategory, selectedTag]);
+    ```
+
+    **Location:** src/app/BlogList.tsx:33-52
+  </Step>
+</Steps>
+
+### Filter System
+
+The blog system supports two types of filters:
+
+<Tabs>
+  <Tab title="Category Filter">
+    Categories group posts by topic (e.g., "Software Development", "AI", "Finance"):
+
+    ```tsx
+    const categories = ['All', ...getAllCategories(allPosts)];
+
+    const categoryOptions = categories.map((cat) => ({
+      value: cat,
+      label: cat,
+    }));
+
+    <FilterDropdown
+      options={categoryOptions}
+      selectedValue={selectedCategory}
+      onValueChange={setSelectedCategory}
+      label="Category"
+    />
+    ```
+
+    **Location:** src/app/BlogList.tsx:18-109
+  </Tab>
+
+  <Tab title="Tag Filter">
+    Tags provide more granular topic classification:
+
+    ```tsx
+    const tags = ['All', ...getAllTags(allPosts)];
+
+    const tagOptions = tags.map((tag) => ({
+      value: tag,
+      label: tag,
+    }));
+
+    <FilterDropdown
+      options={tagOptions}
+      selectedValue={selectedTag}
+      onValueChange={setSelectedTag}
+      label="Tag"
+    />
+    ```
+
+    **Location:** src/app/BlogList.tsx:19-117
+  </Tab>
+</Tabs>
+
+### Active Filters Display
+
+Active filters are shown as removable badges:
+
+```tsx
+{(searchQuery || selectedCategory !== 'All' || selectedTag !== 'All') && (
+  <div className="flex flex-wrap items-center gap-2">
+    <span className="text-sm text-gray-400">Active filters:</span>
+    {searchQuery && (
+      <span className="px-3 py-1 rounded-full text-xs bg-orange-500/20 text-orange-400">
+        Search: "{searchQuery}"
+      </span>
+    )}
+    {selectedCategory !== 'All' && (
+      <span className="px-3 py-1 rounded-full text-xs bg-orange-500/20 text-orange-400">
+        Category: {selectedCategory}
+      </span>
+    )}
+    <button onClick={clearAllFilters} className="text-xs text-gray-400 hover:text-orange-500 underline">
+      Clear all
+    </button>
+  </div>
+)}
+```
+
+**Location:** src/app/BlogList.tsx:121-150
+
+### Featured vs Regular Posts
+
+Posts can be marked as featured for prominence:
+
+```tsx
+const featuredPosts = filteredPosts.filter(post => post.featured);
+const regularPosts = filteredPosts.filter(post => !post.featured);
+
+{/* Featured Posts */}
+{featuredPosts.length > 0 && (
+  <div className="mb-12">
+    <h2 className="text-2xl font-bold text-white mb-6">Featured Posts</h2>
+    <div className="grid md:grid-cols-2 gap-6">
+      {featuredPosts.map((post) => (
+        <BlogCard key={post.id} post={post} featured={true} />
+      ))}
+    </div>
+  </div>
+)}
+
+{/* Regular Posts */}
+<div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+  {regularPosts.map((post) => (
+    <BlogCard key={post.id} post={post} />
+  ))}
+</div>
+```
+
+**Location:** src/app/BlogList.tsx:54-187
+
+<Tip>
+  Featured posts are displayed in a larger 2-column grid above regular posts, making them more prominent.
+</Tip>
+
+## Blog Post Component
+
+The individual blog post viewer displays full content with metadata and interactive features.
+
+### Post Metadata
+
+Each post displays comprehensive metadata:
+
+<Steps>
+  <Step title="Date and Reading Time">
+    ```tsx
+    <div className="flex items-center gap-4 text-gray-400 flex-wrap pt-2">
+      <div className="flex items-center gap-2">
+        <Calendar className="w-4 h-4 text-gray-500" />
+        <time dateTime={post.publishedDate}>
+          {formatDate(post.publishedDate)}
+        </time>
+      </div>
+      {post.readingTime && (
+        <>
+          <span className="text-gray-600">•</span>
+          <div className="flex items-center gap-2">
+            <Clock className="w-4 h-4 text-gray-500" />
+            <span>{post.readingTime} min read</span>
+          </div>
+        </>
+      )}
+    </div>
+    ```
+
+    **Location:** src/app/BlogPost.tsx:137-152
+  </Step>
+
+  <Step title="View Count">
+    View counts are tracked using Convex database:
+
+    ```tsx
+    const incrementView = useMutation(api.views.incrementView);
+    const viewCount = useQuery(api.views.getViewCount, { slug: postSlug ?? '' });
+    const hasTrackedRef = useRef<string | null>(null);
+
+    useEffect(() => {
+      if (postSlug && hasTrackedRef.current !== postSlug) {
+        const sessionKey = `blog_viewed_${postSlug}`;
+        if (!sessionStorage.getItem(sessionKey)) {
+          incrementView({ slug: postSlug });
+          sessionStorage.setItem(sessionKey, '1');
+        }
+        hasTrackedRef.current = postSlug;
+      }
+    }, [incrementView, postSlug]);
+    ```
+
+    **Location:** src/app/BlogPost.tsx:23-36
+  </Step>
+
+  <Step title="Category and Tags">
+    ```tsx
+    {/* Category Badge */}
+    {post.category && (
+      <span className="inline-flex items-center gap-1 px-4 py-2 rounded-full text-sm bg-gradient-to-r from-orange-500/10 to-orange-600/10 border border-orange-500/20 text-orange-400">
+        {post.category}
+      </span>
+    )}
+
+    {/* Tags */}
+    {post.tags && post.tags.length > 0 && (
+      <>
+        <Tag className="w-4 h-4 text-gray-400" />
+        {post.tags.map((tag, index) => (
+          <Link to={`/blog?tag=${tag}`} className="px-3 py-1 rounded-md text-sm bg-white/5 text-gray-400 hover:bg-orange-500/20">
+            {tag}
+          </Link>
+        ))}
+      </>
+    )}
+    ```
+
+    **Location:** src/app/BlogPost.tsx:113-187
+  </Step>
+</Steps>
+
+### AI Summarization
+
+The standout feature is AI-powered blog post summarization:
+
+```tsx
+const [isChatOpen, setIsChatOpen] = useState(false);
+const [blogContextForChat, setBlogContextForChat] = useState<BlogContext | undefined>(undefined);
+
+const handleSummarize = () => {
+  if (post) {
+    setBlogContextForChat({
+      title: post.title,
+      content: post.content,
+      excerpt: post.excerpt,
+    });
+    setIsChatOpen(true);
+  }
+};
+
+<button onClick={handleSummarize} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-orange-500/10 to-orange-600/10">
+  <Sparkles className="w-4 h-4" />
+  AI Summary
+</button>
+
+<ChatBox 
+  isOpen={isChatOpen} 
+  onClose={handleChatClose}
+  blogContext={blogContextForChat}
+  initialMessage={blogContextForChat ? `Please summarize this blog post "${blogContextForChat.title}" for me.` : undefined}
+/>
+```
+
+**Location:** src/app/BlogPost.tsx:18-296
+
+<Note>
+  When the AI Summary button is clicked, the ChatBox component is opened with the full blog post content as context, allowing the AI to provide intelligent summaries and answer questions about the post.
+</Note>
+
+### Social Sharing
+
+Posts can be easily shared:
+
+```tsx
+const [copied, setCopied] = useState(false);
+
+const handleShare = () => {
+  if (navigator.share) {
+    navigator.share({
+      title: post?.title,
+      text: post?.excerpt,
+      url: window.location.href,
+    });
+  } else {
+    navigator.clipboard.writeText(window.location.href);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+};
+
+<button onClick={handleShare} className="flex items-center gap-2 px-4 py-2 rounded-lg">
+  <Share2 className="w-4 h-4" />
+  {copied ? 'Copied!' : 'Share'}
+</button>
+```
+
+**Location:** src/app/BlogPost.tsx:38-219
+
+## Markdown Rendering
+
+Blog posts are written in Markdown and rendered with custom styling:
+
+<Tabs>
+  <Tab title="Headings">
+    ```tsx
+    h1: ({ node, ...props }) => (
+      <h1 className="text-4xl font-semibold mt-8 mb-4 text-white" {...props} />
+    ),
+    h2: ({ node, ...props }) => (
+      <h2 className="text-3xl font-semibold mt-6 mb-3 text-white" {...props} />
+    ),
+    h3: ({ node, ...props }) => (
+      <h3 className="text-2xl font-semibold mt-4 mb-2 text-white" {...props} />
+    )
+    ```
+
+    **Location:** src/app/BlogPost.tsx:231-239
+  </Tab>
+
+  <Tab title="Code Blocks">
+    ```tsx
+    code: ({ node, ...props }: any) => {
+      const isInline = !props.className || !props.className.includes('language-');
+      if (isInline) {
+        return (
+          <code className="bg-gray-800 px-2 py-1 rounded text-orange-400 text-sm" {...props} />
+        );
+      }
+      return (
+        <code className="block bg-gray-900 p-4 rounded-lg overflow-x-auto mb-4" {...props} />
+      );
+    }
+    ```
+
+    **Location:** src/app/BlogPost.tsx:243-252
+  </Tab>
+
+  <Tab title="Links & Lists">
+    ```tsx
+    a: ({ node, ...props }) => (
+      <a className="text-orange-500 hover:text-orange-400 underline" {...props} />
+    ),
+    ul: ({ node, ...props }) => (
+      <ul className="list-disc list-inside mb-4 text-gray-300 space-y-2" {...props} />
+    ),
+    ol: ({ node, ...props }) => (
+      <ol className="list-decimal list-inside mb-4 text-gray-300 space-y-2" {...props} />
+    )
+    ```
+
+    **Location:** src/app/BlogPost.tsx:257-265
+  </Tab>
+</Tabs>
+
+## Blog Utilities
+
+The system includes utility functions for data management:
+
+```tsx
+import { 
+  getAllBlogPosts,
+  getBlogPost,
+  searchPosts,
+  filterByCategory,
+  filterByTag,
+  getAllCategories,
+  getAllTags,
+  formatDate 
+} from '../lib/blog';
+```
+
+### Key Functions
+
+- `getAllBlogPosts()` - Fetches all blog posts
+- `getBlogPost(slug)` - Gets a single post by slug
+- `searchPosts(posts, query)` - Full-text search
+- `filterByCategory(posts, category)` - Filter by category
+- `filterByTag(posts, tag)` - Filter by tag
+- `getAllCategories(posts)` - Extract unique categories
+- `getAllTags(posts)` - Extract unique tags
+- `formatDate(date)` - Format dates for display
+
+## TypeScript Interfaces
+
+```tsx
+interface BlogPost {
+  id: string;
+  slug: string;
+  title: string;
+  excerpt: string;
+  content: string;
+  publishedDate: string;
+  category?: string;
+  tags?: string[];
+  readingTime?: number;
+  featured?: boolean;
+}
+
+interface BlogContext {
+  title: string;
+  content: string;
+  excerpt: string;
+}
+```
+
+## Best Practices
+
+<Note>
+  1. **SEO Optimization** - Use proper meta tags and structured data
+  2. **Reading Time** - Calculate based on average reading speed (200-250 WPM)
+  3. **Image Optimization** - Compress and lazy-load images
+  4. **Accessibility** - Ensure proper heading hierarchy and ARIA labels
+  5. **Performance** - Use memoization for expensive filters
+  6. **View Tracking** - Prevent duplicate counts with session storage
+</Note>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="AI Chat Assistant" icon="message" href="/features/ai-chat-assistant">
+    Learn how the AI assistant summarizes blog posts
+  </Card>
+  <Card title="Project Showcase" icon="rocket" href="/features/project-showcase">
+    Explore the interactive project display
+  </Card>
+</CardGroup>

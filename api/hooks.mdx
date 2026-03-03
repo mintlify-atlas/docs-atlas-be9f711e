@@ -1,0 +1,244 @@
+---
+title: Custom Hooks
+description: React hooks for auto-resize textarea and outside click detection
+---
+
+# Custom Hooks
+
+Reusable React hooks for common UI interactions and behaviors.
+
+## useAutoResizeTextarea
+
+A hook that automatically adjusts textarea height based on content.
+
+### Import
+
+```tsx
+import { useAutoResizeTextarea } from '../components/hooks/use-auto-resize-textarea';
+```
+
+### Usage
+
+```tsx
+function MyComponent() {
+  const { textareaRef, adjustHeight } = useAutoResizeTextarea({
+    minHeight: 44,
+    maxHeight: 200,
+  });
+
+  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    adjustHeight();
+    // Handle value change
+  };
+
+  return (
+    <textarea
+      ref={textareaRef}
+      onChange={handleChange}
+      placeholder="Type something..."
+    />
+  );
+}
+```
+
+### Parameters
+
+<ParamField path="props" type="UseAutoResizeTextareaProps" required>
+  Configuration object for the hook
+  
+  <Expandable title="UseAutoResizeTextareaProps properties">
+    <ParamField path="minHeight" type="number" required>
+      Minimum height of the textarea in pixels
+    </ParamField>
+    
+    <ParamField path="maxHeight" type="number">
+      Maximum height of the textarea in pixels. If not provided, textarea can grow indefinitely
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+### Returns
+
+<ResponseField name="textareaRef" type="React.RefObject<HTMLTextAreaElement>">
+  Ref object to attach to the textarea element
+</ResponseField>
+
+<ResponseField name="adjustHeight" type="(reset?: boolean) => void">
+  Function to manually adjust the textarea height
+  
+  <ParamField path="reset" type="boolean">
+    If `true`, resets the textarea to `minHeight`. Otherwise, calculates new height based on content
+  </ParamField>
+</ResponseField>
+
+### How It Works
+
+1. **Initial Setup**: Sets textarea height to `minHeight` on mount
+2. **Content-Based Sizing**: When `adjustHeight()` is called:
+   - Temporarily shrinks to `minHeight`
+   - Measures `scrollHeight` (actual content height)
+   - Sets height to content size, clamped between `minHeight` and `maxHeight`
+3. **Window Resize**: Automatically adjusts on window resize events
+
+### Internal Implementation
+
+```tsx
+const adjustHeight = useCallback(
+  (reset?: boolean) => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    if (reset) {
+      textarea.style.height = `${minHeight}px`;
+      return;
+    }
+
+    // Temporarily shrink to get the right scrollHeight
+    textarea.style.height = `${minHeight}px`;
+
+    // Calculate new height
+    const newHeight = Math.max(
+      minHeight,
+      Math.min(
+        textarea.scrollHeight,
+        maxHeight ?? Number.POSITIVE_INFINITY
+      )
+    );
+
+    textarea.style.height = `${newHeight}px`;
+  },
+  [minHeight, maxHeight]
+);
+```
+
+### Source Location
+
+`src/components/hooks/use-auto-resize-textarea.ts:8`
+
+---
+
+## useOutsideClick
+
+A hook that detects clicks outside a specified element and triggers a callback.
+
+### Import
+
+```tsx
+import { useOutsideClick } from '../components/hooks/use-outside-click';
+```
+
+### Usage
+
+```tsx
+import { useRef, useState } from 'react';
+import { useOutsideClick } from '../components/hooks/use-outside-click';
+
+function Dropdown() {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useOutsideClick(dropdownRef, () => {
+    setIsOpen(false);
+  });
+
+  return (
+    <div ref={dropdownRef}>
+      <button onClick={() => setIsOpen(!isOpen)}>Toggle</button>
+      {isOpen && (
+        <div className="dropdown-menu">
+          {/* Dropdown content */}
+        </div>
+      )}
+    </div>
+  );
+}
+```
+
+### Parameters
+
+<ParamField path="ref" type="React.RefObject<HTMLDivElement>" required>
+  Reference to the element that should ignore outside clicks. Clicks on this element or its children will not trigger the callback.
+</ParamField>
+
+<ParamField path="callback" type="Function" required>
+  Function to call when a click occurs outside the referenced element
+  
+  ```tsx
+  callback: (event: MouseEvent | TouchEvent) => void
+  ```
+</ParamField>
+
+### Behavior
+
+- **Ignored Clicks**: Clicks on the referenced element or any of its children do nothing
+- **Outside Clicks**: Clicks anywhere else on the document trigger the callback
+- **Event Types**: Listens to both `mousedown` and `touchstart` events for mobile support
+- **Cleanup**: Automatically removes event listeners on unmount
+
+### Implementation Details
+
+```tsx
+useEffect(() => {
+  const listener = (event: any) => {
+    // DO NOTHING if clicking the target element or its children
+    if (!ref.current || ref.current.contains(event.target)) {
+      return;
+    }
+    callback(event);
+  };
+
+  document.addEventListener("mousedown", listener);
+  document.addEventListener("touchstart", listener);
+
+  return () => {
+    document.removeEventListener("mousedown", listener);
+    document.removeEventListener("touchstart", listener);
+  };
+}, [ref, callback]);
+```
+
+### Common Use Cases
+
+- Closing dropdowns when clicking outside
+- Dismissing modals
+- Hiding tooltips or popovers
+- Closing mobile menus
+- Deactivating inline editors
+
+### Source Location
+
+`src/components/hooks/use-outside-click.tsx:3`
+
+---
+
+## Best Practices
+
+### useAutoResizeTextarea
+
+- Always call `adjustHeight()` in your onChange handler
+- Set reasonable `minHeight` and `maxHeight` values
+- Consider UX: very tall textareas may be scrollable instead
+
+### useOutsideClick
+
+- Ensure the ref is attached before the hook runs
+- Memoize the callback with `useCallback` to prevent unnecessary re-renders
+- Be mindful of performance with many simultaneous outside click listeners
+
+## TypeScript Support
+
+Both hooks are fully typed with TypeScript:
+
+```tsx
+// useAutoResizeTextarea
+interface UseAutoResizeTextareaProps {
+  minHeight: number;
+  maxHeight?: number;
+}
+
+// useOutsideClick
+function useOutsideClick(
+  ref: React.RefObject<HTMLDivElement>,
+  callback: Function
+): void
+```

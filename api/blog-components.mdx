@@ -1,0 +1,270 @@
+---
+title: Blog Components
+description: Blog list, blog post, and blog card components for content management
+---
+
+# Blog Components
+
+Components for displaying and managing blog content, including listing, filtering, and individual post views.
+
+## BlogList Component
+
+The main blog listing page with search and filtering capabilities.
+
+### Import
+
+```tsx
+import BlogList from './app/BlogList';
+```
+
+### Usage
+
+```tsx
+function App() {
+  return <BlogList />;
+}
+```
+
+### State Management
+
+<ParamField path="isMobileMenuOpen" type="boolean">
+  Controls mobile navigation menu visibility
+</ParamField>
+
+<ParamField path="searchQuery" type="string">
+  Current search query for filtering posts
+</ParamField>
+
+<ParamField path="selectedCategory" type="string" default="'All'">
+  Currently selected category filter
+</ParamField>
+
+<ParamField path="selectedTag" type="string" default="'All'">
+  Currently selected tag filter
+</ParamField>
+
+### Filtering Logic
+
+Posts are filtered using memoized computation:
+
+```tsx
+const filteredPosts = useMemo(() => {
+  let posts = allPosts;
+  
+  // Apply search
+  if (searchQuery) {
+    posts = searchPosts(posts, searchQuery);
+  }
+  
+  // Apply category filter
+  if (selectedCategory !== 'All') {
+    posts = filterByCategory(posts, selectedCategory);
+  }
+  
+  // Apply tag filter
+  if (selectedTag !== 'All') {
+    posts = filterByTag(posts, selectedTag);
+  }
+  
+  return posts;
+}, [allPosts, searchQuery, selectedCategory, selectedTag]);
+```
+
+### Features
+
+<ParamField path="Search Bar" type="feature">
+  Full-text search across titles, excerpts, categories, and tags
+  
+  - Glass morphism design (backdrop-blur)
+  - Focus states with orange accent
+  - Search icon from lucide-react
+</ParamField>
+
+<ParamField path="Filter Dropdowns" type="feature">
+  Category and tag filtering using FilterDropdown component
+  
+  - Dynamic options generated from available posts
+  - Mobile-responsive layout (flex-col on mobile, flex-row on desktop)
+</ParamField>
+
+<ParamField path="Active Filters Display" type="feature">
+  Visual badges showing currently active filters with clear all option
+</ParamField>
+
+<ParamField path="Featured Posts Section" type="feature">
+  Separate grid for featured blog posts (md:grid-cols-2)
+</ParamField>
+
+<ParamField path="Regular Posts Grid" type="feature">
+  Standard grid layout (md:grid-cols-2, lg:grid-cols-3)
+</ParamField>
+
+### Source Location
+
+`src/app/BlogList.tsx:11`
+
+---
+
+## BlogPost Component
+
+Individual blog post page with full content, metadata, and AI summarization.
+
+### Import
+
+```tsx
+import BlogPost from './app/BlogPost';
+```
+
+### Usage
+
+```tsx
+import { useParams } from 'react-router-dom';
+
+function BlogPostPage() {
+  const { slug } = useParams();
+  return <BlogPost />;
+}
+```
+
+### State Management
+
+<ParamField path="isMobileMenuOpen" type="boolean">
+  Mobile navigation toggle state
+</ParamField>
+
+<ParamField path="copied" type="boolean">
+  Tracks if share link has been copied to clipboard
+</ParamField>
+
+<ParamField path="isChatOpen" type="boolean">
+  Controls ChatBox visibility for AI summarization
+</ParamField>
+
+<ParamField path="blogContextForChat" type="BlogContext | undefined">
+  Blog context passed to ChatBox for AI summarization
+</ParamField>
+
+### View Tracking
+
+Uses Convex for real-time view counting:
+
+```tsx
+const incrementView = useMutation(api.views.incrementView);
+const viewCount = useQuery(api.views.getViewCount, { slug: postSlug ?? '' });
+
+useEffect(() => {
+  if (postSlug && hasTrackedRef.current !== postSlug) {
+    const sessionKey = `blog_viewed_${postSlug}`;
+    if (!sessionStorage.getItem(sessionKey)) {
+      incrementView({ slug: postSlug });
+      sessionStorage.setItem(sessionKey, '1');
+    }
+    hasTrackedRef.current = postSlug;
+  }
+}, [incrementView, postSlug]);
+```
+
+### Actions
+
+<ParamField path="handleShare" type="() => void">
+  Shares the blog post using Web Share API or copies URL to clipboard
+  
+  ```tsx
+  if (navigator.share) {
+    navigator.share({
+      title: post?.title,
+      text: post?.excerpt,
+      url: window.location.href,
+    });
+  } else {
+    navigator.clipboard.writeText(window.location.href);
+    setCopied(true);
+  }
+  ```
+</ParamField>
+
+<ParamField path="handleSummarize" type="() => void">
+  Opens ChatBox with blog context for AI summarization
+  
+  ```tsx
+  setBlogContextForChat({
+    title: post.title,
+    content: post.content,
+    excerpt: post.excerpt,
+  });
+  setIsChatOpen(true);
+  ```
+</ParamField>
+
+### Metadata Display
+
+<ParamField path="Category Badge" type="element">
+  Gradient badge with category name
+</ParamField>
+
+<ParamField path="Publication Date" type="element">
+  Formatted date with Calendar icon
+</ParamField>
+
+<ParamField path="Reading Time" type="element">
+  Estimated reading time with Clock icon
+</ParamField>
+
+<ParamField path="View Count" type="element">
+  Real-time view count with Eye icon
+</ParamField>
+
+<ParamField path="Tags" type="element">
+  Clickable tag badges that link to filtered blog list
+</ParamField>
+
+### Markdown Rendering
+
+Custom ReactMarkdown components for styled content:
+
+```tsx
+<ReactMarkdown
+  components={{
+    h1: ({ node, ...props }) => (
+      <h1 className="text-4xl font-semibold mt-8 mb-4" {...props} />
+    ),
+    code: ({ node, ...props }: any) => {
+      const isInline = !props.className?.includes('language-');
+      if (isInline) {
+        return <code className="bg-gray-800 px-2 py-1 rounded" {...props} />;
+      }
+      return <code className="block bg-gray-900 p-4 rounded-lg" {...props} />;
+    },
+    // ... more custom components
+  }}
+>
+  {post.content}
+</ReactMarkdown>
+```
+
+### Source Location
+
+`src/app/BlogPost.tsx:15`
+
+---
+
+## Data Flow
+
+Both components rely on blog utility functions:
+
+- `getAllBlogPosts()` - Fetches all blog metadata
+- `getBlogPost(slug)` - Fetches individual post with content
+- `searchPosts()` - Filters posts by search query
+- `filterByCategory()` - Filters by category
+- `filterByTag()` - Filters by tag
+- `getAllCategories()` - Gets unique categories
+- `getAllTags()` - Gets unique tags
+- `formatDate()` - Formats date strings
+
+## Dependencies
+
+- `react-router-dom` - URL routing and navigation
+- `react-markdown` - Markdown content rendering
+- `convex/react` - Real-time database hooks
+- `lucide-react` - UI icons
+- Custom blog utilities and types
