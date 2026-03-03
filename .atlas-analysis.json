@@ -1,0 +1,119 @@
+{
+  "projectType": "frontend",
+  "projectName": "Personal Portfolio",
+  "projectDescription": "A modern, responsive portfolio website with AI chat assistant, blog, and project showcase built with React and TypeScript.",
+  "theme": "palm",
+  "primaryColor": "#f97316",
+  "lightColor": "#fb923c",
+  "darkColor": "#ea580c",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "quickstart",
+              "installation"
+            ]
+          },
+          {
+            "group": "Core Features",
+            "pages": [
+              "features/ai-chat-assistant",
+              "features/blog-system",
+              "features/project-showcase",
+              "features/github-integration"
+            ]
+          },
+          {
+            "group": "Components",
+            "pages": [
+              "components/overview",
+              "components/navbar",
+              "components/chatbox",
+              "components/project-card",
+              "components/footer"
+            ]
+          },
+          {
+            "group": "Customization",
+            "pages": [
+              "customization/styling",
+              "customization/theming",
+              "customization/animations"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Deployment",
+        "groups": [
+          {
+            "group": "Setup",
+            "pages": [
+              "deployment/overview",
+              "deployment/netlify",
+              "deployment/environment-variables"
+            ]
+          },
+          {
+            "group": "Backend",
+            "pages": [
+              "deployment/serverless-functions",
+              "deployment/azure-ai-integration",
+              "deployment/convex-setup"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Components API",
+            "pages": [
+              "api/chatbox",
+              "api/portfolio",
+              "api/blog-components"
+            ]
+          },
+          {
+            "group": "Utilities",
+            "pages": [
+              "api/hooks",
+              "api/types",
+              "api/utils"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "AI-powered chat assistant with Azure AI integration",
+    "Markdown-based blog system with view tracking",
+    "Dynamic project showcase with filtering",
+    "GitHub contribution graph integration",
+    "Responsive design with Tailwind CSS",
+    "Serverless backend using Netlify Functions",
+    "Interactive UI components with Framer Motion",
+    "Employment timeline visualization"
+  ],
+  "publicApiSurface": [
+    "Portfolio - Main portfolio page component",
+    "About - About page with skills and background",
+    "BlogList - Blog listing page",
+    "BlogPost - Individual blog post viewer",
+    "ChatBox - AI chat assistant component",
+    "Navbar - Navigation component with mobile menu",
+    "ProjectCard - Project display card component",
+    "GitHubContributionGraph - GitHub activity visualization",
+    "EmploymentTimeline - Career timeline component",
+    "FeaturedProjects - Project showcase with filters",
+    "Footer - Footer component with social links",
+    "WelcomeAnimation - Intro animation component"
+  ]
+}
